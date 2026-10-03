@@ -3,1365 +3,1658 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ResearchAI — Smart Academic Assistant</title>
+<title>Research Assistant — Smart Academic AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-/* ════════════════════════════════════════
-   RESET & BASE
-════════════════════════════════════════ */
-*{box-sizing:border-box;margin:0;padding:0}
+/* ══════════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════════ */
 :root{
-  --navy:       #0f172a;
-  --navy-light: #1e293b;
-  --navy-mid:   #334155;
-  --accent:     #6366f1;
-  --accent-lt:  #818cf8;
-  --accent-bg:  rgba(99,102,241,0.1);
-  --accent-bg2: rgba(99,102,241,0.06);
-  --success:    #10b981;
-  --success-bg: #ecfdf5;
-  --danger:     #ef4444;
-  --danger-bg:  #fef2f2;
-  --warning:    #f59e0b;
-  --warning-bg: #fffbeb;
-  --orange:     #ea580c;
-  --orange-bg:  #fff7ed;
-  --page:       #f8fafc;
-  --card:       #ffffff;
-  --card-border:#e2e8f0;
-  --input-bg:   #f1f5f9;
-  --input-bdr:  #cbd5e1;
-  --text-1:     #0f172a;
-  --text-2:     #475569;
-  --text-3:     #94a3b8;
-  --sidebar-w:  240px;
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  14px;
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-lg:  0 10px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
-  --transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+  --navy:        #0B1730;
+  --navy-2:      #0F1F3D;
+  --navy-3:      #162444;
+  --navy-border: rgba(255,255,255,0.07);
+  --navy-text:   rgba(255,255,255,0.55);
+  --navy-text-h: rgba(255,255,255,0.88);
+  --blue:        #2563EB;
+  --blue-d:      #1D4ED8;
+  --blue-lt:     #EFF6FF;
+  --blue-mid:    #DBEAFE;
+  --indigo:      #4F46E5;
+  --indigo-lt:   #EEF2FF;
+  --page:        #F7F9FC;
+  --card:        #FFFFFF;
+  --border:      #E5EAF2;
+  --border-2:    #D1D9E6;
+  --text-1:      #0F172A;
+  --text-2:      #334155;
+  --text-3:      #64748B;
+  --text-4:      #94A3B8;
+  --success:     #10B981;
+  --success-lt:  #ECFDF5;
+  --success-bd:  #A7F3D0;
+  --warn:        #F59E0B;
+  --warn-lt:     #FFFBEB;
+  --warn-bd:     #FDE68A;
+  --danger:      #EF4444;
+  --danger-lt:   #FEF2F2;
+  --danger-bd:   #FECACA;
+  --orange:      #EA580C;
+  --orange-lt:   #FFF7ED;
+  --orange-bd:   #FED7AA;
+  --sidebar-w:   240px;
+  --topbar-h:    64px;
+  --radius:      12px;
+  --radius-sm:   8px;
+  --radius-lg:   16px;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow:      0 4px 16px rgba(0,0,0,0.07),0 2px 6px rgba(0,0,0,0.04);
+  --shadow-lg:   0 10px 40px rgba(0,0,0,0.10),0 4px 12px rgba(0,0,0,0.05);
+  --transition:  all 0.18s cubic-bezier(0.4,0,0.2,1);
 }
+
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 body{
-  font-family:'Inter',system-ui,sans-serif;
-  background:var(--page);
-  color:var(--text-1);
-  display:flex;
-  min-height:100vh;
-  font-size:14px;
-  line-height:1.6;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--page);color:var(--text-1);
+  display:flex;min-height:100vh;
+  font-size:14px;line-height:1.6;
   -webkit-font-smoothing:antialiased;
 }
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════════════
    SIDEBAR
-════════════════════════════════════════ */
+══════════════════════════════════════════════ */
 .sidebar{
-  width:var(--sidebar-w);
-  min-width:var(--sidebar-w);
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
   background:var(--navy);
-  display:flex;
-  flex-direction:column;
-  padding:0;
-  position:fixed;
-  left:0;top:0;bottom:0;
-  overflow-y:auto;
-  z-index:100;
-}
-.sidebar-top{
-  padding:20px 16px 16px;
-  border-bottom:1px solid rgba(255,255,255,0.06);
-}
-.logo{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  text-decoration:none;
-}
-.logo-icon{
-  width:34px;height:34px;
-  border-radius:9px;
-  background:linear-gradient(135deg,#6366f1,#8b5cf6);
-  display:flex;align-items:center;justify-content:center;
-  color:#fff;font-size:16px;font-weight:700;
-  box-shadow:0 4px 12px rgba(99,102,241,0.4);
-  flex-shrink:0;
-}
-.logo-text{font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.3px}
-.logo-sub{font-size:10px;color:rgba(255,255,255,0.35);font-weight:400;margin-top:1px}
-
-.sidebar-body{padding:12px 10px;flex:1}
-.nav-section{margin-bottom:4px}
-.nav-section-label{
-  font-size:10px;font-weight:600;
-  color:rgba(255,255,255,0.25);
-  text-transform:uppercase;
-  letter-spacing:0.1em;
-  padding:12px 8px 6px;
-}
-.nav-btn{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 10px;
-  border-radius:var(--radius-sm);
-  cursor:pointer;font-size:13px;
-  color:rgba(255,255,255,0.55);
-  border:none;background:transparent;
-  width:100%;text-align:left;
-  transition:var(--transition);
-  font-family:'Inter',system-ui,sans-serif;
-  font-weight:500;
-  position:relative;
-}
-.nav-btn:hover{
-  background:rgba(255,255,255,0.06);
-  color:rgba(255,255,255,0.85);
-}
-.nav-btn.active{
-  background:var(--accent-bg);
-  color:var(--accent-lt);
-}
-.nav-btn.active::before{
-  content:'';
-  position:absolute;left:0;top:50%;transform:translateY(-50%);
-  width:3px;height:18px;
-  background:var(--accent-lt);
-  border-radius:0 3px 3px 0;
-}
-.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
-.nav-label{flex:1}
-.nav-pill{
-  font-size:9px;font-weight:700;
-  padding:2px 6px;border-radius:20px;
-  margin-left:auto;flex-shrink:0;
-}
-.nav-pill.purple{background:rgba(99,102,241,0.25);color:var(--accent-lt)}
-.nav-pill.red{background:rgba(239,68,68,0.2);color:#f87171}
-.nav-pill.orange{background:rgba(234,88,12,0.2);color:#fb923c}
-
-.sidebar-footer{
-  padding:14px 16px;
-  border-top:1px solid rgba(255,255,255,0.06);
-}
-.sidebar-footer-text{
-  font-size:11px;color:rgba(255,255,255,0.2);
-  line-height:1.5;
-}
-
-/* ════════════════════════════════════════
-   MAIN
-════════════════════════════════════════ */
-.main{
-  margin-left:var(--sidebar-w);
-  flex:1;display:flex;flex-direction:column;
-  min-height:100vh;
-}
-.topbar{
-  background:#fff;
-  border-bottom:1px solid var(--card-border);
-  padding:0 28px;
-  height:58px;
-  display:flex;align-items:center;gap:14px;
-  position:sticky;top:0;z-index:50;
-  box-shadow:var(--shadow-sm);
-}
-.topbar-title{
-  font-size:16px;font-weight:600;
-  flex:1;color:var(--text-1);
-  letter-spacing:-0.3px;
-}
-.topbar-badge{
-  font-size:11px;padding:4px 12px;
-  border-radius:20px;
-  background:var(--accent-bg2);
-  color:var(--accent);
-  font-weight:600;
-  border:1px solid rgba(99,102,241,0.15);
-}
-.content{
-  padding:28px;
   display:flex;flex-direction:column;
-  gap:18px;max-width:920px;
+  position:fixed;left:0;top:0;bottom:0;
+  overflow-y:auto;z-index:200;
 }
+.sidebar::-webkit-scrollbar{width:0}
 
-/* ════════════════════════════════════════
-   PANELS
-════════════════════════════════════════ */
-.panel{display:none;flex-direction:column;gap:16px}
+.sb-brand{
+  padding:22px 20px 18px;
+  border-bottom:1px solid var(--navy-border);
+  display:flex;align-items:center;gap:12px;
+}
+.sb-brand-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,#2563EB,#4F46E5);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sb-brand-icon svg{width:22px;height:22px}
+.sb-brand-name{font-size:13px;font-weight:700;color:#fff;line-height:1.2;letter-spacing:0.3px}
+.sb-brand-sub{font-size:10px;color:rgba(255,255,255,0.35);font-weight:400;margin-top:2px}
+
+.sb-nav{padding:14px 12px;flex:1}
+.sb-section{margin-bottom:6px}
+.sb-section-label{
+  font-size:10px;font-weight:600;letter-spacing:0.1em;
+  text-transform:uppercase;color:rgba(255,255,255,0.28);
+  padding:10px 10px 5px;
+}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:var(--radius-sm);
+  cursor:pointer;font-size:13px;font-weight:500;
+  color:var(--navy-text);border:none;background:transparent;
+  width:100%;text-align:left;transition:var(--transition);
+  position:relative;font-family:inherit;
+}
+.sb-item:hover{background:rgba(255,255,255,0.06);color:var(--navy-text-h)}
+.sb-item.active{
+  background:rgba(37,99,235,0.18);
+  color:#60A5FA;
+}
+.sb-item.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:20px;background:#2563EB;border-radius:0 3px 3px 0;
+}
+.sb-item-icon{
+  width:34px;height:34px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.05);flex-shrink:0;transition:var(--transition);
+}
+.sb-item.active .sb-item-icon{background:rgba(37,99,235,0.2)}
+.sb-item-icon svg{width:16px;height:16px;opacity:0.7}
+.sb-item.active .sb-item-icon svg{opacity:1}
+.sb-item-label{flex:1;font-size:13px}
+.sb-badge{
+  font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;
+}
+.sb-badge.blue{background:rgba(37,99,235,0.25);color:#93C5FD}
+.sb-badge.red{background:rgba(239,68,68,0.2);color:#FCA5A5}
+.sb-badge.orange{background:rgba(234,88,12,0.2);color:#FDBA74}
+
+.sb-footer{
+  padding:14px 16px;border-top:1px solid var(--navy-border);
+}
+.sb-footer-text{font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:0.05em}
+
+/* ══════════════════════════════════════════════
+   MAIN LAYOUT
+══════════════════════════════════════════════ */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  height:var(--topbar-h);padding:0 32px;
+  display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);
+}
+.topbar-left{flex:1}
+.topbar-page-title{font-size:20px;font-weight:700;color:var(--text-1);letter-spacing:-0.4px}
+.topbar-page-desc{font-size:13px;color:var(--text-3);margin-top:1px}
+.topbar-badge{
+  font-size:11px;padding:5px 13px;border-radius:20px;
+  border:1.5px solid var(--border-2);
+  color:var(--text-3);font-weight:500;white-space:nowrap;
+}
+.topbar-action-btn{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 16px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--border);background:var(--card);
+  font-size:13px;font-weight:600;color:var(--text-2);
+  cursor:pointer;font-family:inherit;transition:var(--transition);
+}
+.topbar-action-btn:hover{background:var(--page);border-color:var(--border-2)}
+.topbar-action-btn svg{width:15px;height:15px}
+
+/* ── CONTENT ── */
+.content{padding:28px 32px;flex:1;max-width:1100px}
+
+/* ── PANELS ── */
+.panel{display:none;flex-direction:column;gap:20px}
 .panel.active{display:flex}
 
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════════════
+   TYPOGRAPHY
+══════════════════════════════════════════════ */
+.section-heading{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-4);margin-bottom:10px}
+.card-title{font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:2px}
+
+/* ══════════════════════════════════════════════
+   CARDS
+══════════════════════════════════════════════ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.card-pad{padding:24px}
+.card-pad-sm{padding:16px 20px}
+
+/* ══════════════════════════════════════════════
    FORM ELEMENTS
-════════════════════════════════════════ */
-.input-field{
-  display:block;width:100%;
-  padding:10px 14px;
-  border:1.5px solid var(--input-bdr);
-  border-radius:var(--radius-sm);
-  font-size:14px;color:var(--text-1);
-  background:var(--input-bg);
-  font-family:'Inter',system-ui,sans-serif;
-  transition:var(--transition);
-  outline:none;
+══════════════════════════════════════════════ */
+.input{
+  width:100%;padding:11px 16px;
+  border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  font-size:14px;color:var(--text-1);background:var(--card);
+  font-family:inherit;transition:var(--transition);outline:none;
 }
-.input-field:hover{border-color:#94a3b8;background:#fff}
-.input-field:focus{
-  border-color:var(--accent);
-  background:#fff;
-  box-shadow:0 0 0 3px rgba(99,102,241,0.12);
-}
-.input-field::placeholder{color:var(--text-3)}
-textarea.input-field{min-height:140px;resize:vertical;line-height:1.65}
-select.input-field{cursor:pointer}
+.input:hover{border-color:var(--border-2)}
+.input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.input::placeholder{color:var(--text-4)}
+textarea.input{min-height:140px;resize:vertical;line-height:1.65}
+select.input{cursor:pointer}
 
-/* ════════════════════════════════════════
+.search-input-wrap{
+  display:flex;gap:12px;align-items:center;
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:6px 6px 6px 16px;
+  transition:var(--transition);box-shadow:var(--shadow-sm);
+}
+.search-input-wrap:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.search-input-wrap input{
+  flex:1;border:none;outline:none;font-size:15px;
+  color:var(--text-1);background:transparent;font-family:inherit;
+}
+.search-input-wrap input::placeholder{color:var(--text-4)}
+
+/* ══════════════════════════════════════════════
    BUTTONS
-════════════════════════════════════════ */
+══════════════════════════════════════════════ */
 .btn{
-  padding:9px 18px;
-  border-radius:var(--radius-sm);
-  border:1.5px solid var(--card-border);
-  background:#fff;
-  font-size:13px;font-weight:600;
-  color:var(--text-1);
-  font-family:'Inter',system-ui,sans-serif;
-  cursor:pointer;
-  display:inline-flex;align-items:center;gap:7px;
-  transition:var(--transition);
-  white-space:nowrap;
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;font-family:inherit;
+  cursor:pointer;transition:var(--transition);
+  border:1.5px solid transparent;white-space:nowrap;
   text-decoration:none;
-  box-shadow:var(--shadow-sm);
 }
-.btn:hover{background:var(--page);border-color:#94a3b8;transform:translateY(-1px);box-shadow:var(--shadow-md)}
-.btn:active{transform:translateY(0)}
-.btn.primary{
-  background:var(--accent);color:#fff;
-  border-color:var(--accent);
-  box-shadow:0 4px 12px rgba(99,102,241,0.3);
-}
-.btn.primary:hover{background:#4f46e5;border-color:#4f46e5;box-shadow:0 6px 16px rgba(99,102,241,0.4)}
-.btn.purple{background:#7c3aed;color:#fff;border-color:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,0.3)}
-.btn.purple:hover{background:#6d28d9;box-shadow:0 6px 16px rgba(124,58,237,0.4)}
-.btn.green{background:var(--success);color:#fff;border-color:var(--success);box-shadow:0 4px 12px rgba(16,185,129,0.3)}
-.btn.green:hover{background:#059669;box-shadow:0 6px 16px rgba(16,185,129,0.4)}
-.btn.red{background:var(--danger);color:#fff;border-color:var(--danger);box-shadow:0 4px 12px rgba(239,68,68,0.3)}
-.btn.red:hover{background:#dc2626;box-shadow:0 6px 16px rgba(239,68,68,0.4)}
-.btn.orange{background:var(--orange);color:#fff;border-color:var(--orange);box-shadow:0 4px 12px rgba(234,88,12,0.3)}
-.btn.orange:hover{background:#c2410c;box-shadow:0 6px 16px rgba(234,88,12,0.4)}
-.btn.sm{padding:6px 13px;font-size:12px;box-shadow:none}
-.btn.sm:hover{transform:none}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{background:var(--blue-d);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,0.35)}
+.btn-secondary{background:var(--card);color:var(--text-2);border-color:var(--border)}
+.btn-secondary:hover{background:var(--page);border-color:var(--border-2)}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn-danger:hover{background:#DC2626;transform:translateY(-1px)}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success)}
+.btn-success:hover{background:#059669;transform:translateY(-1px)}
+.btn-warn{background:var(--orange);color:#fff;border-color:var(--orange)}
+.btn-warn:hover{background:#C2410C;transform:translateY(-1px)}
+.btn-indigo{background:var(--indigo);color:#fff;border-color:var(--indigo)}
+.btn-indigo:hover{background:#4338CA;transform:translateY(-1px)}
+.btn-sm{padding:7px 14px;font-size:12px}
+.btn-lg{padding:13px 28px;font-size:15px}
+.btn svg{width:15px;height:15px}
+.btn-sm svg{width:13px;height:13px}
 
-/* ════════════════════════════════════════
-   LAYOUT HELPERS
-════════════════════════════════════════ */
-.row{display:flex;gap:10px;align-items:center}
-.row .input-field{flex:1}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* ══════════════════════════════════════════════
+   BADGES / TAGS
+══════════════════════════════════════════════ */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:var(--success-lt);color:#065F46;border:1px solid var(--success-bd)}
+.badge-yellow{background:var(--warn-lt);color:#92400E;border:1px solid var(--warn-bd)}
+.badge-red{background:var(--danger-lt);color:#991B1B;border:1px solid var(--danger-bd)}
+.badge-blue{background:var(--blue-lt);color:#1E40AF;border:1px solid var(--blue-mid)}
+.badge-gray{background:#F1F5F9;color:var(--text-3);border:1px solid var(--border)}
 
-/* ════════════════════════════════════════
-   INFO BOXES
-════════════════════════════════════════ */
-.info-box{
-  border-radius:var(--radius-md);
-  padding:14px 18px;font-size:13px;
-  line-height:1.7;border-width:1px;border-style:solid;
+/* match scores */
+.match-score-box{
+  min-width:110px;padding:12px 16px;border-radius:var(--radius-sm);
+  text-align:center;flex-shrink:0;
 }
-.info-box b{font-weight:600}
-.info-box.purple{background:#f5f3ff;border-color:#ddd6fe;color:#5b21b6}
-.info-box.green{background:var(--success-bg);border-color:#a7f3d0;color:#065f46}
-.info-box.blue{background:#eff6ff;border-color:#bfdbfe;color:#1e40af}
-.info-box.red{background:var(--danger-bg);border-color:#fecaca;color:#991b1b}
-.info-box.orange{background:var(--orange-bg);border-color:#fed7aa;color:#9a3412}
+.match-score-box .score-pct{font-size:22px;font-weight:800;line-height:1}
+.match-score-box .score-label{font-size:11px;font-weight:600;margin-top:4px}
+.msb-excellent{background:#ECFDF5;color:#059669}
+.msb-excellent .score-label{color:#10B981}
+.msb-good{background:#FFFBEB;color:#D97706}
+.msb-good .score-label{color:#F59E0B}
+.msb-partial{background:#FFF7ED;color:#EA580C}
+.msb-partial .score-label{color:#EA580C}
+.msb-weak{background:#FEF2F2;color:#EF4444}
+.msb-weak .score-label{color:#EF4444}
 
-/* ════════════════════════════════════════
-   PAPER CARDS
-════════════════════════════════════════ */
-.result-card{
-  background:#fff;
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);
-  padding:18px 20px;
-  transition:var(--transition);
-  margin-bottom:10px;
-  box-shadow:var(--shadow-sm);
-}
-.result-card:hover{
-  border-color:var(--accent);
-  box-shadow:0 4px 20px rgba(99,102,241,0.1);
-  transform:translateY(-1px);
-}
-.result-title{
-  font-size:15px;font-weight:600;
-  color:var(--text-1);margin-bottom:6px;
-  line-height:1.4;letter-spacing:-0.2px;
-}
-.result-meta{font-size:12px;color:var(--text-3);margin-bottom:8px}
-.result-abstract{font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:12px}
-.card-actions{display:flex;gap:8px;flex-wrap:wrap}
+/* ══════════════════════════════════════════════
+   INFO CALLOUT BOXES
+══════════════════════════════════════════════ */
+.callout{border-radius:var(--radius-sm);padding:14px 18px;font-size:13px;line-height:1.65;border:1px solid}
+.callout b{font-weight:600}
+.callout-blue{background:var(--blue-lt);border-color:var(--blue-mid);color:#1E40AF}
+.callout-green{background:var(--success-lt);border-color:var(--success-bd);color:#065F46}
+.callout-yellow{background:var(--warn-lt);border-color:var(--warn-bd);color:#92400E}
+.callout-red{background:var(--danger-lt);border-color:var(--danger-bd);color:#991B1B}
+.callout-orange{background:var(--orange-lt);border-color:var(--orange-bd);color:#9A3412}
+.callout-gray{background:#F8FAFC;border-color:var(--border);color:var(--text-2)}
 
-/* STATUS TAGS */
-.status-tag{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:2px 9px;border-radius:20px;
-  font-size:10px;font-weight:600;
-  margin-bottom:8px;margin-right:4px;
-}
-.status-published{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
-.status-preprint{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
-
-/* SCORE BADGES */
-.score-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:3px 10px;border-radius:20px;
-  font-size:11px;font-weight:600;
-  margin-bottom:8px;
-}
-.score-excellent{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
-.score-good{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
-.score-partial{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
-.score-weak{background:var(--danger-bg);color:#991b1b;border:1px solid #fecaca}
-
-/* ════════════════════════════════════════
-   OUTPUT AREAS
-════════════════════════════════════════ */
-.output-label{
-  font-size:10px;font-weight:700;
-  color:var(--text-3);
-  text-transform:uppercase;
-  letter-spacing:0.1em;
-  margin-bottom:8px;
-}
-.output-box{
-  background:#fff;
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);
-  padding:18px 20px;
-  font-size:14px;line-height:1.85;
-  color:var(--text-1);
-  white-space:pre-wrap;word-wrap:break-word;
-  box-shadow:var(--shadow-sm);
-}
-.analysis-box{
-  background:#fff;
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);
-  padding:18px 20px;
-  font-size:14px;line-height:1.85;
-  color:var(--text-1);
-  white-space:pre-wrap;word-wrap:break-word;
-  box-shadow:var(--shadow-sm);
-}
-.cite-box{
-  background:#fafbff;
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);
-  padding:18px 20px;
-  font-size:14px;color:var(--text-1);
-  line-height:1.8;
-  border-left:4px solid var(--accent);
-  word-wrap:break-word;
-}
-
-/* ════════════════════════════════════════
-   SCORE METERS
-════════════════════════════════════════ */
-.score-meter-wrap{margin:14px 0}
-.score-meter-label{
-  display:flex;justify-content:space-between;
-  font-size:12px;color:var(--text-2);
-  margin-bottom:7px;font-weight:500;
-}
-.score-meter{
-  background:#e2e8f0;
-  border-radius:20px;height:10px;overflow:hidden;
-}
-.score-fill{
-  height:100%;border-radius:20px;
-  transition:width 1.2s cubic-bezier(0.4,0,0.2,1);
-  display:flex;align-items:center;justify-content:flex-end;
-  padding-right:8px;font-size:10px;font-weight:700;color:#fff;
-  min-width:24px;
-}
-.score-fill.low{background:linear-gradient(90deg,#10b981,#34d399)}
-.score-fill.medium{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
-.score-fill.high{background:linear-gradient(90deg,#ef4444,#f87171)}
-
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════════════
    STAT CARDS
-════════════════════════════════════════ */
-.stat-row{display:flex;gap:12px;margin:12px 0}
+══════════════════════════════════════════════ */
+.stat-row{display:flex;gap:14px}
 .stat-card{
-  background:#fff;
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);
-  padding:16px 14px;text-align:center;flex:1;
+  flex:1;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;
   box-shadow:var(--shadow-sm);
 }
-.stat-num{font-size:26px;font-weight:700;letter-spacing:-1px}
-.stat-lbl{font-size:11px;color:var(--text-3);margin-top:4px;font-weight:500}
-.stat-card.red   .stat-num{color:var(--danger)}
-.stat-card.orange.stat-num,.stat-card.orange .stat-num{color:var(--orange)}
-.stat-card.green .stat-num{color:var(--success)}
-.stat-card.purple.stat-num,.stat-card.purple .stat-num{color:#7c3aed}
-.stat-card.blue  .stat-num{color:#2563eb}
-.stat-card.accent.stat-num,.stat-card.accent .stat-num{color:var(--accent)}
+.stat-card-icon{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:12px;
+}
+.stat-card-icon svg{width:18px;height:18px}
+.stat-card-num{font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1}
+.stat-card-label{font-size:12px;color:var(--text-3);margin-top:5px;font-weight:500}
+.sc-blue .stat-card-icon{background:var(--blue-lt)} .sc-blue .stat-card-num{color:var(--blue)}
+.sc-green .stat-card-icon{background:var(--success-lt)} .sc-green .stat-card-num{color:var(--success)}
+.sc-red .stat-card-icon{background:var(--danger-lt)} .sc-red .stat-card-num{color:var(--danger)}
+.sc-orange .stat-card-icon{background:var(--orange-lt)} .sc-orange .stat-card-num{color:var(--orange)}
+.sc-yellow .stat-card-icon{background:var(--warn-lt)} .sc-yellow .stat-card-num{color:var(--warn)}
+.sc-indigo .stat-card-icon{background:var(--indigo-lt)} .sc-indigo .stat-card-num{color:var(--indigo)}
 
-/* ════════════════════════════════════════
-   MATCH ITEMS (plagiarism)
-════════════════════════════════════════ */
-.match-item{
-  background:#fff;
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);
-  padding:14px 18px;
-  margin-bottom:10px;
-  box-shadow:var(--shadow-sm);
+/* ══════════════════════════════════════════════
+   SCORE METER
+══════════════════════════════════════════════ */
+.score-meter-wrap{margin:6px 0}
+.score-meter-top{display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);margin-bottom:8px;font-weight:500}
+.score-meter-track{background:#E2E8F0;border-radius:20px;height:10px;overflow:hidden;position:relative}
+.score-meter-fill{
+  height:100%;border-radius:20px;
+  transition:width 1.4s cubic-bezier(0.4,0,0.2,1);
 }
-.match-title{font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text-1)}
-.match-meta{font-size:12px;color:var(--text-2);margin-bottom:8px}
-.match-scores{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px}
-.match-score-pill{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600}
-.match-score-pill.high{background:var(--danger-bg);color:#991b1b;border:1px solid #fecaca}
-.match-score-pill.medium{background:var(--warning-bg);color:#92400e;border:1px solid #fde68a}
-.match-score-pill.low{background:var(--success-bg);color:#065f46;border:1px solid #a7f3d0}
-.flagged-sentence{
-  background:var(--danger-bg);
-  border-left:3px solid var(--danger);
-  padding:7px 12px;margin-top:7px;
-  font-size:12px;color:var(--text-1);
-  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
-  line-height:1.5;
-}
+.smf-low{background:linear-gradient(90deg,#10B981,#34D399)}
+.smf-medium{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+.smf-high{background:linear-gradient(90deg,#EF4444,#F87171)}
 
-/* ════════════════════════════════════════
-   AI INDICATORS
-════════════════════════════════════════ */
-.ai-indicators{display:flex;flex-direction:column;gap:9px;margin:12px 0}
-.ai-indicator-row{display:flex;align-items:center;gap:12px;font-size:13px}
-.ai-indicator-bar{flex:1;background:#e2e8f0;border-radius:10px;height:7px;overflow:hidden}
-.ai-indicator-fill{height:100%;border-radius:10px;transition:width 0.9s cubic-bezier(0.4,0,0.2,1)}
-.ai-indicator-fill.high{background:var(--danger)}
-.ai-indicator-fill.medium{background:var(--warning)}
-.ai-indicator-fill.low{background:var(--success)}
-.ai-indicator-label{width:170px;font-size:12px;color:var(--text-2);font-weight:500}
-.ai-indicator-val{width:36px;text-align:right;font-size:12px;font-weight:600;color:var(--text-1)}
-
-/* ════════════════════════════════════════
-   HUMANIZER
-════════════════════════════════════════ */
-.humanize-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.text-panel{
-  background:#fff;
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);
-  padding:16px 18px;
-  box-shadow:var(--shadow-sm);
+/* gradient meter for AI detection */
+.ai-meter-track{
+  height:12px;border-radius:20px;
+  background:linear-gradient(90deg,#10B981 0%,#F59E0B 50%,#EF4444 100%);
+  position:relative;margin:10px 0;
 }
-.text-panel-label{
-  font-size:10px;font-weight:700;color:var(--text-3);
-  text-transform:uppercase;letter-spacing:0.1em;
-  margin-bottom:10px;display:flex;align-items:center;gap:6px;
-}
-.text-panel-content{
-  font-size:13px;line-height:1.8;color:var(--text-1);
-  white-space:pre-wrap;word-wrap:break-word;min-height:180px;
+.ai-meter-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-4)}
+.ai-meter-thumb{
+  position:absolute;top:50%;width:3px;height:20px;background:var(--text-1);
+  border-radius:2px;transform:translate(-50%,-50%);transition:left 1.2s ease;
 }
 
-/* ════════════════════════════════════════
-   CHAT
-════════════════════════════════════════ */
-.chat-box{
-  background:#fff;
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius-lg);
-  overflow:hidden;
-  box-shadow:var(--shadow-md);
-}
-.chat-messages{
-  padding:20px;
-  display:flex;flex-direction:column;gap:14px;
-  min-height:300px;max-height:400px;overflow-y:auto;
-}
-.chat-messages::-webkit-scrollbar{width:4px}
-.chat-messages::-webkit-scrollbar-track{background:transparent}
-.chat-messages::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:2px}
-.msg{
-  padding:12px 16px;border-radius:12px;
-  font-size:14px;line-height:1.7;
-  max-width:82%;word-wrap:break-word;
-}
-.msg.user{
-  background:var(--accent);color:#fff;
-  align-self:flex-end;
-  border-radius:12px 12px 2px 12px;
-  box-shadow:0 2px 8px rgba(99,102,241,0.25);
-}
-.msg.ai{
-  background:var(--page);color:var(--text-1);
-  align-self:flex-start;
-  border:1px solid var(--card-border);
-  border-radius:12px 12px 12px 2px;
-}
-.msg-sender{
-  font-size:10px;font-weight:700;
-  color:var(--accent);margin-bottom:5px;
-  display:block;text-transform:uppercase;letter-spacing:0.05em;
-}
-.chat-footer{
-  border-top:1px solid var(--card-border);
-  padding:14px 16px;
-  display:flex;gap:10px;
-  background:var(--page);
-}
-.chat-footer .input-field{flex:1;margin:0}
-
-/* QUICK PILLS */
-.quick-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.quick-pill{
-  padding:6px 13px;border-radius:20px;
-  background:#fff;border:1.5px solid var(--card-border);
-  font-size:12px;cursor:pointer;
-  font-family:'Inter',system-ui,sans-serif;
-  font-weight:500;color:var(--text-2);
-  transition:var(--transition);
-  box-shadow:var(--shadow-sm);
-}
-.quick-pill:hover{
-  background:var(--accent-bg);
-  border-color:rgba(99,102,241,0.3);
-  color:var(--accent);transform:translateY(-1px);
-}
-
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════════════
    UPLOAD ZONE
-════════════════════════════════════════ */
+══════════════════════════════════════════════ */
 .upload-zone{
-  border:2px dashed #c7d2fe;
-  border-radius:var(--radius-lg);
-  padding:32px 20px;text-align:center;
-  background:linear-gradient(135deg,#f5f3ff,#eff6ff);
+  border:2px dashed #CBD5E1;border-radius:var(--radius);
+  padding:36px 24px;text-align:center;
+  background:linear-gradient(135deg,#F8FAFC,#F0F7FF);
   cursor:pointer;transition:var(--transition);
 }
 .upload-zone:hover,.upload-zone.drag{
-  border-color:var(--accent);
-  background:linear-gradient(135deg,#ede9fe,#e0e7ff);
-  transform:translateY(-1px);
-  box-shadow:var(--shadow-md);
+  border-color:var(--blue);
+  background:linear-gradient(135deg,#EFF6FF,#E0EAFF);
+  transform:translateY(-1px);box-shadow:var(--shadow);
 }
-.upload-icon{font-size:36px;margin-bottom:10px}
-.upload-title{font-size:15px;font-weight:600;margin-bottom:4px;color:var(--text-1)}
-.upload-sub{font-size:12px;color:var(--text-3)}
+.upload-zone-icon{
+  width:56px;height:56px;border-radius:14px;
+  background:var(--blue-lt);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;
+}
+.upload-zone-icon svg{width:28px;height:28px;color:var(--blue)}
+.upload-zone-title{font-size:15px;font-weight:600;color:var(--text-1);margin-bottom:5px}
+.upload-zone-sub{font-size:12px;color:var(--text-4)}
 
-/* PDF RESULT CARD */
-.pdf-card{
-  background:#fff;border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);padding:16px 20px;
+/* ══════════════════════════════════════════════
+   PAPER CARDS
+══════════════════════════════════════════════ */
+.paper-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px 24px;
+  transition:var(--transition);display:flex;gap:20px;
+  align-items:flex-start;box-shadow:var(--shadow-sm);
+}
+.paper-card:hover{border-color:#B8C7E0;box-shadow:var(--shadow);transform:translateY(-1px)}
+.paper-card-num{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--page);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:var(--text-3);flex-shrink:0;
+}
+.paper-card-body{flex:1;min-width:0}
+.paper-card-title{
+  font-size:15px;font-weight:600;color:var(--blue);
+  margin-bottom:5px;line-height:1.4;cursor:pointer;
+}
+.paper-card-title:hover{color:var(--blue-d)}
+.paper-card-meta{font-size:12px;color:var(--text-3);margin-bottom:8px;display:flex;flex-wrap:wrap;gap:10px}
+.paper-card-meta span{display:flex;align-items:center;gap:4px}
+.paper-card-meta svg{width:12px;height:12px}
+.paper-card-abstract{font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:12px}
+.paper-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.paper-card-score{flex-shrink:0}
+
+/* ══════════════════════════════════════════════
+   CHAT
+══════════════════════════════════════════════ */
+.chat-container{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  display:flex;flex-direction:column;box-shadow:var(--shadow-sm);
+}
+.chat-messages{
+  flex:1;padding:24px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:16px;
+  min-height:320px;max-height:440px;
+}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:#E2E8F0;border-radius:2px}
+.msg-wrap{display:flex;flex-direction:column}
+.msg-wrap.user{align-items:flex-end}
+.msg-wrap.ai{align-items:flex-start}
+.msg-label{font-size:10px;font-weight:700;letter-spacing:0.05em;color:var(--text-4);margin-bottom:5px;text-transform:uppercase}
+.msg-bubble{
+  padding:13px 17px;border-radius:14px;
+  font-size:14px;line-height:1.7;max-width:80%;word-wrap:break-word;
+}
+.msg-bubble.user{
+  background:var(--blue);color:#fff;
+  border-radius:14px 14px 4px 14px;
+  box-shadow:0 2px 8px rgba(37,99,235,0.25);
+}
+.msg-bubble.ai{
+  background:var(--page);color:var(--text-1);
+  border:1px solid var(--border);border-radius:14px 14px 14px 4px;
+}
+.chat-footer{
+  border-top:1px solid var(--border);padding:16px 20px;
+  background:var(--page);display:flex;gap:12px;align-items:center;
+}
+.chat-footer .input{flex:1;margin:0}
+.starter-prompts{display:flex;gap:8px;flex-wrap:wrap}
+.starter-chip{
+  padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;
+  background:var(--card);border:1.5px solid var(--border);
+  color:var(--text-2);cursor:pointer;font-family:inherit;transition:var(--transition);
+}
+.starter-chip:hover{background:var(--blue-lt);border-color:#93C5FD;color:var(--blue)}
+
+/* ══════════════════════════════════════════════
+   LITERATURE REVIEW — 3 column
+══════════════════════════════════════════════ */
+.lit-grid{display:grid;grid-template-columns:280px 1fr 220px;gap:20px;align-items:start}
+.lit-review-body{font-size:14px;color:var(--text-1);line-height:1.85;white-space:pre-wrap;word-wrap:break-word}
+.lit-outline-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 12px;border-radius:var(--radius-sm);
+  font-size:13px;color:var(--text-2);cursor:default;
+  transition:var(--transition);
+}
+.lit-outline-item:hover{background:var(--blue-lt);color:var(--blue)}
+.lit-outline-num{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--blue-lt);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;
+}
+.lit-stat-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.lit-stat-row:last-child{border-bottom:none}
+.lit-stat-icon{
+  width:30px;height:30px;border-radius:6px;
+  background:var(--blue-lt);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.lit-stat-icon svg{width:14px;height:14px;color:var(--blue)}
+.lit-stat-label{font-size:12px;color:var(--text-3);flex:1}
+.lit-stat-value{font-size:13px;font-weight:600;color:var(--text-1)}
+
+/* ══════════════════════════════════════════════
+   PDF RESULT
+══════════════════════════════════════════════ */
+.pdf-result-grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+.pdf-icon-wrap{
+  width:56px;height:56px;border-radius:12px;
+  background:linear-gradient(135deg,#EF4444,#DC2626);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.pdf-icon-wrap svg{width:28px;height:28px;color:#fff}
+.pdf-stat-bar{display:flex;gap:24px;padding:16px 0}
+.pdf-stat-item{display:flex;align-items:center;gap:10px}
+.pdf-stat-item-icon{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--blue-lt);display:flex;align-items:center;justify-content:center;
+}
+.pdf-stat-item-icon svg{width:18px;height:18px;color:var(--blue)}
+.pdf-stat-num{font-size:18px;font-weight:700;color:var(--text-1)}
+.pdf-stat-lbl{font-size:11px;color:var(--text-3)}
+.analysis-text{font-size:14px;color:var(--text-1);line-height:1.85;white-space:pre-wrap;word-wrap:break-word}
+.analysis-section{margin-bottom:16px}
+.analysis-section-title{font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:5px}
+.analysis-section-body{font-size:14px;color:var(--text-2);line-height:1.75}
+
+/* ══════════════════════════════════════════════
+   PLAGIARISM
+══════════════════════════════════════════════ */
+.plag-top-grid{display:grid;grid-template-columns:1fr 1fr 300px;gap:16px}
+.plag-result-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-top:16px}
+.matched-sources-table{width:100%;border-collapse:collapse}
+.matched-sources-table th{
+  font-size:11px;font-weight:700;color:var(--text-4);
+  text-transform:uppercase;letter-spacing:0.07em;
+  padding:8px 12px;border-bottom:2px solid var(--border);text-align:left;
+}
+.matched-sources-table td{
+  padding:12px 12px;border-bottom:1px solid var(--border);
+  font-size:13px;color:var(--text-1);vertical-align:top;
+}
+.matched-sources-table tr:last-child td{border-bottom:none}
+.matched-sources-table tr:hover td{background:#F8FAFC}
+.risk-pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.risk-high{background:var(--danger-lt);color:#991B1B}
+.risk-medium{background:var(--warn-lt);color:#92400E}
+.risk-low{background:var(--success-lt);color:#065F46}
+
+/* ══════════════════════════════════════════════
+   AI DETECTION
+══════════════════════════════════════════════ */
+.ai-det-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.stat-list-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.stat-list-item:last-child{border-bottom:none}
+.stat-list-icon{
+  width:32px;height:32px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.stat-list-icon svg{width:15px;height:15px}
+.stat-list-label{flex:1;font-size:13px;color:var(--text-2);font-weight:500}
+.stat-list-value{font-size:14px;font-weight:700;color:var(--text-1)}
+.detail-analysis-card{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:0;
+}
+.detail-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 14px;text-align:center;
   box-shadow:var(--shadow-sm);
 }
-.pdf-header{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.detail-card-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 10px;
+}
+.detail-card-icon svg{width:20px;height:20px}
+.detail-card-num{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.detail-card-label{font-size:11px;color:var(--text-3);font-weight:500;margin-top:4px}
+.detail-card-desc{font-size:11px;color:var(--text-4);line-height:1.4;margin-top:6px}
 
-/* ════════════════════════════════════════
-   SECTION TITLE
-════════════════════════════════════════ */
-.section-title{
-  font-size:12px;font-weight:600;color:var(--text-2);
-  margin-bottom:10px;display:flex;align-items:center;gap:7px;
-  padding-bottom:8px;border-bottom:1px solid var(--card-border);
+/* ══════════════════════════════════════════════
+   HUMANIZER
+══════════════════════════════════════════════ */
+.humanize-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.text-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm)}
+.text-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.text-panel-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-4)}
+.text-panel-body{font-size:14px;color:var(--text-1);line-height:1.85;white-space:pre-wrap;word-wrap:break-word;min-height:200px}
+
+/* ══════════════════════════════════════════════
+   CITATION
+══════════════════════════════════════════════ */
+.cite-result{
+  background:#FAFBFF;border:1.5px solid var(--border);
+  border-left:4px solid var(--blue);border-radius:var(--radius-sm);
+  padding:18px 20px;font-size:14px;color:var(--text-1);
+  line-height:1.8;word-wrap:break-word;font-family:'Georgia',serif;
 }
 
-/* ════════════════════════════════════════
-   DIVIDER
-════════════════════════════════════════ */
-.divider{
-  height:1px;background:var(--card-border);
-  margin:4px 0;
-}
-
-/* ════════════════════════════════════════
-   LOADING / ERROR / EMPTY
-════════════════════════════════════════ */
-.loading{
-  background:#fff;border:1.5px solid var(--card-border);
-  border-radius:var(--radius-md);
-  padding:20px 20px;font-size:14px;color:var(--text-2);
-  display:flex;align-items:center;gap:12px;
+/* ══════════════════════════════════════════════
+   LOADING & EMPTY & ERROR
+══════════════════════════════════════════════ */
+.loading-state{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:24px 24px;
+  display:flex;align-items:center;gap:14px;
   box-shadow:var(--shadow-sm);
 }
 .spinner{
-  width:18px;height:18px;
-  border:2.5px solid #e2e8f0;
-  border-top-color:var(--accent);
-  border-radius:50%;
-  animation:spin 0.7s linear infinite;flex-shrink:0;
+  width:20px;height:20px;flex-shrink:0;
+  border:2.5px solid #E2E8F0;border-top-color:var(--blue);
+  border-radius:50%;animation:spin 0.7s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.error-box{
-  background:var(--danger-bg);
-  border:1.5px solid #fecaca;
-  border-radius:var(--radius-md);
-  padding:14px 18px;font-size:14px;color:#991b1b;
-}
-.empty-state{text-align:center;padding:48px 20px}
-.empty-icon{font-size:44px;margin-bottom:14px;opacity:0.35}
-.empty-text{font-size:14px;color:var(--text-3);font-weight:500}
+.loading-text{font-size:14px;color:var(--text-2)}
 
-/* ════════════════════════════════════════
-   SCROLLBAR (global)
-════════════════════════════════════════ */
+.empty-state{text-align:center;padding:60px 24px}
+.empty-icon{
+  width:64px;height:64px;border-radius:16px;
+  background:var(--page);border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+}
+.empty-icon svg{width:30px;height:30px;color:var(--text-4)}
+.empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+.empty-desc{font-size:13px;color:var(--text-4);max-width:320px;margin:0 auto}
+
+.error-state{
+  background:var(--danger-lt);border:1px solid var(--danger-bd);
+  border-radius:var(--radius);padding:16px 20px;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.error-state svg{width:18px;height:18px;color:var(--danger);flex-shrink:0;margin-top:1px}
+.error-state-title{font-size:14px;font-weight:600;color:#991B1B;margin-bottom:3px}
+.error-state-desc{font-size:13px;color:#B91C1C}
+
+/* ══════════════════════════════════════════════
+   DIVIDER
+══════════════════════════════════════════════ */
+.divider{height:1px;background:var(--border);margin:4px 0}
+.divider-or{
+  display:flex;align-items:center;gap:16px;color:var(--text-4);
+  font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;
+}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ══════════════════════════════════════════════
+   LAYOUT HELPERS
+══════════════════════════════════════════════ */
+.flex{display:flex}.flex-col{flex-direction:column}
+.items-center{align-items:center}.items-start{align-items:flex-start}
+.justify-between{justify-content:space-between}
+.gap-4{gap:4px}.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}.gap-20{gap:20px}
+.flex-1{flex:1}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mt-4{margin-top:4px}.mt-8{margin-top:8px}.mt-12{margin-top:12px}
+.mt-16{margin-top:16px}.mt-20{margin-top:20px}
+.w-full{width:100%}
+
+/* ══════════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════════ */
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#94A3B8}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media(max-width:1024px){
+  .lit-grid{grid-template-columns:240px 1fr}
+  .lit-outline-col{display:none}
+  .ai-det-grid{grid-template-columns:1fr}
+  .plag-top-grid{grid-template-columns:1fr 1fr}
+  .plag-result-grid{grid-template-columns:1fr}
+  .detail-analysis-card{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .content{padding:20px 16px}
+  .topbar{padding:0 16px}
+  .lit-grid{grid-template-columns:1fr}
+  .pdf-result-grid{grid-template-columns:1fr}
+  .humanize-grid{grid-template-columns:1fr}
+  .paper-card{flex-direction:column}
+  .paper-card-score{align-self:flex-end}
+  .stat-row{flex-wrap:wrap}
+  .detail-analysis-card{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
 
-<!-- ════ SIDEBAR ════ -->
-<aside class="sidebar">
-  <div class="sidebar-top">
-    <div class="logo">
-      <div class="logo-icon">R</div>
-      <div>
-        <div class="logo-text">ResearchAI</div>
-        <div class="logo-sub">Smart Academic Assistant</div>
-      </div>
+<!-- ══════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 0 20A10 10 0 0 1 12 2z" stroke-dasharray="4 2"/>
+        <path d="M12 8v1M12 15v1M8 12H7M17 12h-1"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sb-brand-name">RESEARCH<br>ASSISTANT</div>
+      <div class="sb-brand-sub">Smart Academic AI</div>
     </div>
   </div>
 
-  <div class="sidebar-body">
-    <div class="nav-section">
-      <div class="nav-section-label">Search</div>
-      <button class="nav-btn active" onclick="switchPanel('search')" id="nav-search">
-        <span class="nav-icon">&#129504;</span>
-        <span class="nav-label">Search Papers</span>
-        <span class="nav-pill purple">NLP</span>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-label">Search</div>
+      <button class="sb-item active" onclick="showPanel('search')" id="nav-search">
+        <div class="sb-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <span class="sb-item-label">Search Papers</span>
       </button>
     </div>
 
-    <div class="nav-section">
-      <div class="nav-section-label">Analysis</div>
-      <button class="nav-btn" onclick="switchPanel('summarize')" id="nav-summarize">
-        <span class="nav-icon">&#128203;</span>
-        <span class="nav-label">Summarize + PDF</span>
+    <div class="sb-section">
+      <div class="sb-section-label">Analysis</div>
+      <button class="sb-item" onclick="showPanel('pdf')" id="nav-pdf">
+        <div class="sb-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <span class="sb-item-label">PDF Analysis</span>
       </button>
-      <button class="nav-btn" onclick="switchPanel('litreview')" id="nav-litreview">
-        <span class="nav-icon">&#128218;</span>
-        <span class="nav-label">Literature Review</span>
-      </button>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-section-label">Integrity Tools</div>
-      <button class="nav-btn" onclick="switchPanel('plagiarism')" id="nav-plagiarism">
-        <span class="nav-icon">&#128270;</span>
-        <span class="nav-label">Plagiarism Check</span>
-        <span class="nav-pill red">NEW</span>
-      </button>
-      <button class="nav-btn" onclick="switchPanel('aidetect')" id="nav-aidetect">
-        <span class="nav-icon">&#129302;</span>
-        <span class="nav-label">AI Detection</span>
-        <span class="nav-pill red">NEW</span>
-      </button>
-      <button class="nav-btn" onclick="switchPanel('humanize')" id="nav-humanize">
-        <span class="nav-icon">&#9997;&#65039;</span>
-        <span class="nav-label">Humanizer</span>
-        <span class="nav-pill orange">NEW</span>
+      <button class="sb-item" onclick="showPanel('litreview')" id="nav-litreview">
+        <div class="sb-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        <span class="sb-item-label">Literature Review</span>
       </button>
     </div>
 
-    <div class="nav-section">
-      <div class="nav-section-label">Assistant</div>
-      <button class="nav-btn" onclick="switchPanel('chat')" id="nav-chat">
-        <span class="nav-icon">&#128172;</span>
-        <span class="nav-label">Ask AI</span>
+    <div class="sb-section">
+      <div class="sb-section-label">Integrity Tools</div>
+      <button class="sb-item" onclick="showPanel('plagiarism')" id="nav-plagiarism">
+        <div class="sb-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <span class="sb-item-label">Plagiarism Checker</span>
+        <span class="sb-badge red">NEW</span>
       </button>
-      <button class="nav-btn" onclick="switchPanel('cite')" id="nav-cite">
-        <span class="nav-icon">&#128220;</span>
-        <span class="nav-label">Citation Gen</span>
+      <button class="sb-item" onclick="showPanel('aidetect')" id="nav-aidetect">
+        <div class="sb-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <span class="sb-item-label">AI Detection</span>
+        <span class="sb-badge red">NEW</span>
+      </button>
+      <button class="sb-item" onclick="showPanel('humanize')" id="nav-humanize">
+        <div class="sb-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <span class="sb-item-label">Humanizer</span>
+        <span class="sb-badge orange">NEW</span>
       </button>
     </div>
-  </div>
 
-  <div class="sidebar-footer">
-    <div class="sidebar-footer-text">Groq AI &nbsp;·&nbsp; arXiv &nbsp;·&nbsp; NLP</div>
+    <div class="sb-section">
+      <div class="sb-section-label">Assistant</div>
+      <button class="sb-item" onclick="showPanel('chat')" id="nav-chat">
+        <div class="sb-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <span class="sb-item-label">Ask AI</span>
+      </button>
+      <button class="sb-item" onclick="showPanel('cite')" id="nav-cite">
+        <div class="sb-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+        </div>
+        <span class="sb-item-label">Citation Generator</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-footer-text">Groq AI &nbsp;·&nbsp; arXiv &nbsp;·&nbsp; NLP · MiniLM</div>
   </div>
 </aside>
 
-<!-- ════ MAIN ════ -->
+<!-- ══════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════ -->
 <div class="main">
-  <div class="topbar">
-    <div class="topbar-title" id="panel-title">Search Papers</div>
-    <div class="topbar-badge" id="panel-badge">NLP Semantic Search</div>
-  </div>
 
+  <!-- TOPBAR -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <div class="topbar-page-title" id="topbar-title">Search Research Papers</div>
+      <div class="topbar-page-desc" id="topbar-desc">Find relevant research papers using semantic similarity</div>
+    </div>
+    <div id="topbar-right"></div>
+  </header>
+
+  <!-- CONTENT -->
   <div class="content">
 
-    <!-- 1. SEARCH -->
+    <!-- ══════════════════════════
+         SEARCH PAPERS
+    ══════════════════════════ -->
     <div class="panel active" id="panel-search">
-      <div class="info-box purple">
-        <b>&#129504; NLP Semantic Search</b> — Fetches papers from arXiv and ranks them by meaning similarity using sentence embeddings. Each result shows whether it is a published paper or preprint.
+      <div class="search-input-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-q" placeholder="Search research topic (e.g. machine learning in healthcare)" onkeydown="if(event.key==='Enter')doSearch()"/>
+        <button class="btn btn-primary" onclick="doSearch()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Search
+        </button>
       </div>
-      <div class="row">
-        <input type="text" class="input-field" id="search-input"
-          placeholder="e.g. deep learning for medical diagnosis"
-          onkeydown="if(event.key==='Enter')doSearch()"/>
-        <button class="btn purple" onclick="doSearch()">&#129504; Search</button>
-      </div>
+
       <div id="search-results">
         <div class="empty-state">
-          <div class="empty-icon">&#129504;</div>
-          <div class="empty-text">Enter any research topic to find semantically similar papers</div>
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <div class="empty-title">Search for Research Papers</div>
+          <div class="empty-desc">Enter a topic above to discover semantically relevant papers from arXiv</div>
         </div>
       </div>
     </div>
 
-    <!-- 2. SUMMARIZE + PDF -->
-    <div class="panel" id="panel-summarize">
-      <div class="info-box blue"><b>&#128196; Option 1 — Upload PDF</b> to analyze a research paper automatically</div>
-      <div class="upload-zone" id="upload-zone"
-        onclick="document.getElementById('pdf-input').click()"
-        ondragover="event.preventDefault();this.classList.add('drag')"
-        ondragleave="this.classList.remove('drag')"
-        ondrop="handleDrop(event,'pdf-input',false)">
-        <div class="upload-icon">&#128196;</div>
-        <div class="upload-title">Drop PDF here or click to browse</div>
-        <div class="upload-sub">Text-based PDFs only &nbsp;·&nbsp; Max 10MB</div>
+    <!-- ══════════════════════════
+         PDF ANALYSIS
+    ══════════════════════════ -->
+    <div class="panel" id="panel-pdf">
+      <div class="pdf-result-grid" id="pdf-main-grid" style="display:none"></div>
+
+      <!-- Upload state -->
+      <div id="pdf-upload-area">
+        <div class="upload-zone" id="pdf-drop-zone"
+          onclick="document.getElementById('pdf-file').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="handlePDFDrop(event,false)">
+          <div class="upload-zone-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          </div>
+          <div class="upload-zone-title">Drop PDF here or click to browse</div>
+          <div class="upload-zone-sub">Text-based PDFs supported &nbsp;·&nbsp; Max 10MB</div>
+        </div>
+        <input type="file" id="pdf-file" accept=".pdf" style="display:none" onchange="uploadPDF(this.files[0],false)"/>
       </div>
-      <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="handleSummarizePDF(this)"/>
-      <div id="pdf-output"></div>
-      <div class="divider"></div>
-      <div class="info-box blue"><b>&#9997;&#65039; Option 2 — Paste Text</b> to summarize any abstract or content</div>
-      <textarea class="input-field" id="summarize-input" placeholder="Paste your paper abstract or full text here..."></textarea>
-      <div class="row">
-        <select class="input-field" id="summary-style" style="max-width:220px">
-          <option>Concise (3 bullets)</option>
-          <option>ELI5 (Simple language)</option>
-          <option>Technical (Deep dive)</option>
-        </select>
-        <button class="btn primary" onclick="doSummarize()">&#10024; Generate Summary</button>
+
+      <!-- Summarize section -->
+      <div class="divider-or mt-20">OR</div>
+      <div class="card card-pad">
+        <div class="section-heading" style="margin-bottom:12px">Summarize Text</div>
+        <textarea class="input" id="summarize-text" placeholder="Paste paper abstract or full text here..."></textarea>
+        <div class="flex gap-12 mt-12">
+          <select class="input" id="summary-style" style="max-width:220px">
+            <option>Concise (3 bullets)</option>
+            <option>ELI5 (Simple language)</option>
+            <option>Technical (Deep dive)</option>
+          </select>
+          <button class="btn btn-primary" onclick="doSummarize()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            Generate Summary
+          </button>
+        </div>
+        <div id="summary-output" class="mt-16"></div>
       </div>
-      <div id="summary-output"></div>
     </div>
 
-    <!-- 3. LITERATURE REVIEW -->
+    <!-- ══════════════════════════
+         LITERATURE REVIEW
+    ══════════════════════════ -->
     <div class="panel" id="panel-litreview">
-      <div class="info-box green">
-        <b>&#128218; Literature Review Generator</b><br>
-        Fetches 12 real arXiv papers and writes a complete structured review with introduction, themes, trends, gaps, and references.<br>
-        <b>&#9888;&#65039; Takes 30–45 seconds</b>
+      <div class="lit-grid">
+        <!-- LEFT -->
+        <div class="flex flex-col gap-16">
+          <div class="card card-pad">
+            <div class="section-heading">Research Topic</div>
+            <input type="text" class="input mt-8" id="lit-topic" placeholder="e.g. machine learning in healthcare" onkeydown="if(event.key==='Enter')doLitReview()"/>
+            <button class="btn btn-primary w-full mt-12" onclick="doLitReview()" style="justify-content:center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Generate Review
+            </button>
+          </div>
+          <div class="card card-pad" id="lit-stats-card" style="display:none">
+            <div class="section-heading">Review Statistics</div>
+            <div id="lit-stats-body" style="margin-top:8px"></div>
+          </div>
+        </div>
+
+        <!-- CENTER -->
+        <div class="card card-pad" id="lit-center">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <div class="empty-title">Generated Literature Review</div>
+            <div class="empty-desc">Enter a research topic and click Generate Review</div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="card card-pad lit-outline-col" id="lit-outline-card" style="display:none">
+          <div class="section-heading">Review Outline</div>
+          <div id="lit-outline-body" style="margin-top:8px"></div>
+          <div class="callout callout-blue mt-16" style="font-size:12px">
+            The review is generated based on the top relevant papers from arXiv.
+          </div>
+        </div>
       </div>
-      <input type="text" class="input-field" id="litreview-input"
-        placeholder="e.g. transformer models NLP, federated learning healthcare"
-        onkeydown="if(event.key==='Enter')doLitReview()"/>
-      <div style="display:flex;gap:10px;align-items:center">
-        <button class="btn primary" onclick="doLitReview()">&#128218; Generate Literature Review</button>
-        <span style="font-size:12px;color:var(--text-3)">Takes 30–45 seconds</span>
-      </div>
-      <div id="litreview-output"></div>
     </div>
 
-    <!-- 4. PLAGIARISM -->
+    <!-- ══════════════════════════
+         PLAGIARISM CHECKER
+    ══════════════════════════ -->
     <div class="panel" id="panel-plagiarism">
-      <div class="info-box red">
-        <b>&#128270; Plagiarism Checker — N-gram + Sentence Similarity</b><br>
-        Uses 4-word phrase matching and sentence-level NLP similarity to detect copied content against arXiv papers. Upload a PDF or paste text below.
+      <div class="callout callout-gray flex gap-12 items-start">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span><b>Plagiarism Check</b> — Checks text against arXiv papers using n-gram phrase matching and sentence-level semantic similarity. Upload a PDF or paste text below.</span>
       </div>
-      <div class="section-title">&#128196; Upload PDF to check</div>
-      <div class="upload-zone" id="plag-upload-zone"
-        onclick="document.getElementById('plag-pdf-input').click()"
-        ondragover="event.preventDefault();this.classList.add('drag')"
-        ondragleave="this.classList.remove('drag')"
-        ondrop="handleDrop(event,'plag-pdf-input',true)">
-        <div class="upload-icon">&#128196;</div>
-        <div class="upload-title">Drop PDF or click to upload</div>
-        <div class="upload-sub">Text will be auto-extracted and checked</div>
+
+      <!-- PDF Upload -->
+      <div class="card card-pad">
+        <div class="section-heading">Upload PDF</div>
+        <div class="upload-zone mt-8" id="plag-drop-zone"
+          onclick="document.getElementById('plag-pdf-file').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="handlePDFDrop(event,true)">
+          <div class="upload-zone-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          </div>
+          <div class="upload-zone-title">Drop PDF or click to upload</div>
+          <div class="upload-zone-sub">Text will be extracted automatically</div>
+        </div>
+        <input type="file" id="plag-pdf-file" accept=".pdf" style="display:none" onchange="uploadPDF(this.files[0],true)"/>
+        <div id="plag-pdf-status" class="mt-8"></div>
       </div>
-      <input type="file" id="plag-pdf-input" accept=".pdf" style="display:none" onchange="handlePlagiarismPDF(this)"/>
-      <div id="plag-pdf-status"></div>
-      <div class="divider"></div>
-      <div class="section-title">&#9997;&#65039; Or paste text directly</div>
-      <textarea class="input-field" id="plagiarism-input" style="min-height:160px"
-        placeholder="Paste your essay or research text here... Minimum 50 characters."></textarea>
-      <div style="display:flex;gap:10px;align-items:center">
-        <button class="btn red" onclick="doPlagiarismCheck()">&#128270; Check for Plagiarism</button>
-        <span style="font-size:12px;color:var(--text-3)">Checks against arXiv using phrase matching</span>
+
+      <div class="divider-or">OR</div>
+
+      <!-- Text input -->
+      <div class="card card-pad">
+        <div class="section-heading">Input Text</div>
+        <textarea class="input mt-8" id="plag-text" style="min-height:160px" placeholder="Paste your essay, research paragraph, or any academic text here...&#10;Minimum 50 characters required."></textarea>
+        <div class="flex gap-8 items-center mt-12">
+          <button class="btn btn-danger" onclick="doPlagiarism()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Check for Plagiarism
+          </button>
+          <span style="font-size:12px;color:var(--text-4)">Checks against arXiv using phrase matching</span>
+        </div>
       </div>
-      <div id="plagiarism-output"></div>
+      <div id="plag-output"></div>
     </div>
 
-    <!-- 5. AI DETECTION -->
+    <!-- ══════════════════════════
+         AI DETECTION
+    ══════════════════════════ -->
     <div class="panel" id="panel-aidetect">
-      <div class="info-box orange">
-        <b>&#129302; AI Content Detection — Multi-Signal Analysis</b><br>
-        Analyzes 6 signals: sentence uniformity, AI phrase patterns, vocabulary diversity, punctuation variety, paragraph structure, and deep LLM pattern analysis.
+      <div id="aidet-input-area" class="card card-pad">
+        <div class="section-heading">Input Text</div>
+        <textarea class="input mt-8" id="aidet-text" style="min-height:180px" placeholder="Paste text here to check if it was AI-generated...&#10;Minimum 100 characters for accurate analysis."></textarea>
+        <div class="flex gap-8 mt-12">
+          <button class="btn btn-warn" onclick="doAIDetect()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Detect AI Content
+          </button>
+          <button class="btn btn-secondary" id="to-humanize-btn" style="display:none" onclick="sendToHumanize()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Send to Humanizer
+          </button>
+        </div>
       </div>
-      <div class="section-title">&#9997;&#65039; Paste text to analyze</div>
-      <textarea class="input-field" id="aidetect-input" style="min-height:160px"
-        placeholder="Paste your text here to check if it was AI-generated... Minimum 100 characters."></textarea>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn orange" onclick="doAIDetection()">&#129302; Detect AI Content</button>
-        <button class="btn sm" id="send-humanize-btn" style="display:none" onclick="sendCurrentToHumanize()">&#9997;&#65039; Send to Humanizer</button>
-      </div>
-      <div id="aidetect-output"></div>
+      <div id="aidet-output"></div>
     </div>
 
-    <!-- 6. HUMANIZER -->
+    <!-- ══════════════════════════
+         HUMANIZER
+    ══════════════════════════ -->
     <div class="panel" id="panel-humanize">
-      <div class="info-box orange">
-        <b>&#9997;&#65039; Humanizer — Make AI Text Sound Natural</b><br>
-        Rewrites AI text using 3 different strategies: casual academic style, varied sentence rhythm, and personal voice injection. Shows before and after side by side.
-      </div>
-      <div class="section-title">&#9997;&#65039; Paste AI-generated text to humanize</div>
-      <textarea class="input-field" id="humanize-input" style="min-height:160px"
-        placeholder="Paste AI-generated text here to rewrite it in a natural human style..."></textarea>
-      <div class="row">
-        <select class="input-field" id="humanize-style" style="max-width:240px">
-          <option value="academic">Academic Human Style</option>
-          <option value="casual">Casual Student Style</option>
-          <option value="natural">Conversational Natural</option>
-        </select>
-        <button class="btn orange" onclick="doHumanize()">&#9997;&#65039; Humanize Text</button>
+      <div class="card card-pad">
+        <div class="section-heading">AI-Generated Text</div>
+        <textarea class="input mt-8" id="humanize-text" style="min-height:160px" placeholder="Paste AI-generated text here to rewrite it in a natural human style..."></textarea>
+        <div class="flex gap-12 mt-12">
+          <select class="input" id="humanize-style" style="max-width:220px">
+            <option value="academic">Academic Human Style</option>
+            <option value="casual">Casual Student Style</option>
+            <option value="natural">Conversational Natural</option>
+          </select>
+          <button class="btn btn-warn" onclick="doHumanize()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Humanize Text
+          </button>
+        </div>
       </div>
       <div id="humanize-output"></div>
     </div>
 
-    <!-- 7. ASK AI -->
+    <!-- ══════════════════════════
+         ASK AI
+    ══════════════════════════ -->
     <div class="panel" id="panel-chat">
-      <div class="info-box blue">
-        <b>&#128172; Ask AI anything</b> — research concepts, methodology, paper explanations, or use quick actions:
-        <div class="quick-actions">
-          <button class="quick-pill" onclick="quickAction('gaps')">&#128161; Research Gaps</button>
-          <button class="quick-pill" onclick="quickAction('compare')">&#9878;&#65039; Compare Methods</button>
-          <button class="quick-pill" onclick="quickAction('methodology')">&#128300; Methodology</button>
-          <button class="quick-pill" onclick="quickAction('lithelp')">&#128218; Lit Review Help</button>
-          <button class="quick-pill" onclick="quickAction('explain')">&#127891; Explain Concept</button>
-        </div>
+      <div class="starter-prompts">
+        <button class="starter-chip" onclick="setPrompt('What are the main research gaps in [your topic]? Describe 4 specific gaps.')">Research Gaps</button>
+        <button class="starter-chip" onclick="setPrompt('Compare [Method A] vs [Method B] — advantages and disadvantages?')">Compare Methods</button>
+        <button class="starter-chip" onclick="setPrompt('I am researching [topic]. What research methodology do you recommend?')">Suggest Methodology</button>
+        <button class="starter-chip" onclick="setPrompt('Help me structure a literature review for my research on [topic].')">Literature Review Help</button>
+        <button class="starter-chip" onclick="setPrompt('Explain [concept] in simple terms with a real research example.')">Explain Concept</button>
       </div>
-      <div class="chat-box">
-        <div class="chat-messages" id="chat-messages">
-          <div class="msg ai">
-            <span class="msg-sender">ResearchAI</span>
-            Hello! I am your academic research assistant. Ask me anything about papers, methodology, NLP, ML, or use the quick actions above to get started instantly.
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-msgs">
+          <div class="msg-wrap ai">
+            <div class="msg-label">Research Assistant</div>
+            <div class="msg-bubble ai">Hello! I'm your academic research assistant. Ask me anything about research papers, methodologies, concepts, or use the starter prompts above to get started.</div>
           </div>
         </div>
         <div class="chat-footer">
-          <input type="text" class="input-field" id="chat-input"
-            placeholder="Ask a research question..."
-            onkeydown="if(event.key==='Enter')sendChat()"/>
-          <button class="btn primary" onclick="sendChat()">&#10148; Send</button>
+          <input type="text" class="input" id="chat-input" placeholder="Ask a research question..." onkeydown="if(event.key==='Enter')sendChat()"/>
+          <button class="btn btn-primary" onclick="sendChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Send
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- 8. CITATION GEN -->
+    <!-- ══════════════════════════
+         CITATION GENERATOR
+    ══════════════════════════ -->
     <div class="panel" id="panel-cite">
-      <div class="output-label">Enter paper details</div>
-      <div class="grid2">
-        <input type="text" class="input-field" id="cite-title"   placeholder="Paper title"/>
-        <input type="text" class="input-field" id="cite-authors" placeholder="Authors (e.g. Vaswani A, Shazeer N)"/>
-        <input type="text" class="input-field" id="cite-year"    placeholder="Year (e.g. 2017)"/>
-        <input type="text" class="input-field" id="cite-journal" placeholder="Journal / Conference"/>
-        <input type="text" class="input-field" id="cite-volume"  placeholder="Volume (optional)"/>
-        <input type="text" class="input-field" id="cite-pages"   placeholder="Pages (optional)"/>
+      <div class="card card-pad">
+        <div class="grid-2" style="gap:14px">
+          <div>
+            <label class="section-heading" style="display:block;margin-bottom:6px">Paper Title</label>
+            <input type="text" class="input" id="cite-title" placeholder="e.g. Attention Is All You Need"/>
+          </div>
+          <div>
+            <label class="section-heading" style="display:block;margin-bottom:6px">Authors</label>
+            <input type="text" class="input" id="cite-authors" placeholder="e.g. Vaswani A, Shazeer N"/>
+          </div>
+          <div>
+            <label class="section-heading" style="display:block;margin-bottom:6px">Year</label>
+            <input type="text" class="input" id="cite-year" placeholder="e.g. 2017"/>
+          </div>
+          <div>
+            <label class="section-heading" style="display:block;margin-bottom:6px">Journal / Conference</label>
+            <input type="text" class="input" id="cite-journal" placeholder="e.g. NeurIPS"/>
+          </div>
+          <div>
+            <label class="section-heading" style="display:block;margin-bottom:6px">Volume (optional)</label>
+            <input type="text" class="input" id="cite-volume" placeholder="e.g. 30"/>
+          </div>
+          <div>
+            <label class="section-heading" style="display:block;margin-bottom:6px">Pages (optional)</label>
+            <input type="text" class="input" id="cite-pages" placeholder="e.g. 5998–6008"/>
+          </div>
+        </div>
+        <div class="flex gap-12 mt-16 items-center">
+          <div>
+            <label class="section-heading" style="display:block;margin-bottom:6px">Citation Style</label>
+            <select class="input" id="cite-style" style="min-width:160px">
+              <option>APA 7th</option>
+              <option>MLA 9th</option>
+              <option>IEEE</option>
+              <option>Chicago</option>
+              <option>Harvard</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" style="margin-top:18px" onclick="doCite()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+            Generate Citation
+          </button>
+        </div>
+        <div id="cite-output" class="mt-20"></div>
       </div>
-      <div class="row">
-        <select class="input-field" id="cite-style" style="max-width:180px">
-          <option>APA 7th</option><option>MLA 9th</option>
-          <option>IEEE</option><option>Chicago</option><option>Harvard</option>
-        </select>
-        <button class="btn primary" onclick="doCite()">&#128203; Generate Citation</button>
-      </div>
-      <div id="cite-output"></div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /content -->
+</div><!-- /main -->
 
 <script>
-const BACKEND = "http://127.0.0.1:8000";
+const API = "http://127.0.0.1:8000";
 
-const META = {
-  search:    {title:"Search Papers",       badge:"NLP Semantic Search"},
-  summarize: {title:"Summarize + PDF",     badge:"AI Summarization & PDF Analysis"},
-  litreview: {title:"Literature Review",   badge:"AI Academic Writing"},
-  plagiarism:{title:"Plagiarism Checker",  badge:"N-gram + Sentence Similarity"},
-  aidetect:  {title:"AI Detection",        badge:"Multi-Signal AI Analysis"},
-  humanize:  {title:"Humanizer",           badge:"Reduce AI Score"},
-  chat:      {title:"Ask AI",              badge:"Groq Research Assistant"},
-  cite:      {title:"Citation Generator",  badge:"5 Citation Styles"}
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+const PANELS = {
+  search:     {title:"Search Research Papers",           desc:"Find relevant research papers using semantic similarity",          badge:"NLP Semantic Search"},
+  pdf:        {title:"PDF Analysis & Summarization",     desc:"Upload a research paper PDF to analyze and summarize its content",  badge:"AI Summarization"},
+  litreview:  {title:"Literature Review Generator",      desc:"Generate a structured literature review on any research topic",    badge:"AI Academic Writing"},
+  plagiarism: {title:"Plagiarism Checker",               desc:"Check text for plagiarism using semantic and lexical similarity",   badge:"Research Integrity"},
+  aidetect:   {title:"AI-Generated Text Detection",      desc:"Detect the likelihood of AI-generated text using advanced analysis",badge:"Multi-Signal Analysis"},
+  humanize:   {title:"Humanizer",                        desc:"Rewrite text to sound natural while preserving meaning",            badge:"Text Rewriting"},
+  chat:       {title:"Ask AI",                           desc:"Your academic research assistant powered by Llama 3.3 70B",        badge:"Groq AI"},
+  cite:       {title:"Citation Generator",               desc:"Generate properly formatted academic citations",                   badge:"5 Citation Styles"},
 };
 
-function switchPanel(name) {
-  Object.keys(META).forEach(p => {
-    document.getElementById("panel-"+p).classList.remove("active");
-    document.getElementById("nav-"+p).classList.remove("active");
-  });
-  document.getElementById("panel-"+name).classList.add("active");
-  document.getElementById("nav-"+name).classList.add("active");
-  document.getElementById("panel-title").textContent  = META[name].title;
-  document.getElementById("panel-badge").textContent  = META[name].badge;
-}
-
-function showLoading(id, msg) {
-  document.getElementById(id).innerHTML =
-    '<div class="loading"><div class="spinner"></div>' + msg + '</div>';
-}
-function showError(id, msg) {
-  document.getElementById(id).innerHTML =
-    '<div class="error-box">&#10060; ' + msg + '</div>';
-}
-async function post(endpoint, body) {
-  const res = await fetch(BACKEND + endpoint, {
-    method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error("Server error " + res.status);
-  return await res.json();
-}
-
-/* ── PAPER CARDS ── */
-function renderPapers(papers, containerId) {
-  if (!papers || papers.length === 0) {
-    document.getElementById(containerId).innerHTML =
-      '<div class="empty-state"><div class="empty-icon">&#128269;</div>' +
-      '<div class="empty-text">No results found. Try different keywords.</div></div>';
-    return;
-  }
-  let html = "";
-  papers.forEach(p => {
-    const fa = (p.abstract||"").replace(/'/g,"&#39;").replace(/"/g,"&quot;");
-    const sc = p.match_level==="Excellent Match"?"score-excellent":
-               p.match_level==="Good Match"?"score-good":
-               p.match_level==="Partial Match"?"score-partial":"score-weak";
-    html += `<div class="result-card" data-abstract="${fa}">`;
-    html += p.status==="published"
-      ? `<span class="status-tag status-published">&#9989; Published</span>`
-      : `<span class="status-tag status-preprint">&#9888;&#65039; Preprint</span>`;
-    if (p.similarity_score!==undefined)
-      html += `<span class="score-badge ${sc}">&#127919; ${p.match_level} — ${p.similarity_score}%</span>`;
-    html += `<div class="result-title">${p.title||"Untitled"}</div>`;
-    html += `<div class="result-meta">&#128100; ${p.authors||"Unknown"} &nbsp;·&nbsp; &#128197; ${p.year||"N/A"} &nbsp;·&nbsp; &#127963; ${p.venue||"arXiv"}${p.doi?` &nbsp;·&nbsp; DOI: ${p.doi}`:""}</div>`;
-    html += `<div class="result-abstract">${(p.abstract||"").substring(0,260)}...</div>`;
-    html += `<div class="card-actions">
-      <button class="btn sm primary" onclick="summarizeCard(this)">&#128203; Summarize</button>`;
-    if (p.pdf_url)
-      html += `<a href="${p.pdf_url}" target="_blank" class="btn sm green" style="text-decoration:none">&#11015;&#65039; Download PDF</a>`;
-    html += `<button class="btn sm" onclick="askAICard(this)">&#128172; Ask AI</button>
-      <button class="btn sm" style="border-color:var(--danger);color:var(--danger)" onclick="checkPlagiarismCard(this)">&#128270; Plagiarism</button>
-    </div></div>`;
-  });
-  document.getElementById(containerId).innerHTML = html;
-}
-
-function summarizeCard(btn) {
-  const c = btn.closest(".result-card");
-  document.getElementById("summarize-input").value = c.getAttribute("data-abstract");
-  switchPanel("summarize");
-}
-function askAICard(btn) {
-  const c = btn.closest(".result-card");
-  document.getElementById("chat-input").value =
-    `Paper: ${c.querySelector(".result-title").textContent}\n\nAbstract: ${c.getAttribute("data-abstract")}\n\nPlease give me an overview.`;
-  switchPanel("chat");
-}
-function checkPlagiarismCard(btn) {
-  const c = btn.closest(".result-card");
-  document.getElementById("plagiarism-input").value = c.getAttribute("data-abstract");
-  switchPanel("plagiarism");
-}
-
-/* ── 1. SEARCH ── */
-async function doSearch() {
-  const q = document.getElementById("search-input").value.trim();
-  if (!q) { alert("Please enter a search topic."); return; }
-  showLoading("search-results","Fetching papers and running NLP semantic search — first time takes 20–30 seconds...");
-  try {
-    const data = await post("/semantic-search",{query:q});
-    if (data.error) { showError("search-results",data.error); return; }
-    renderPapers(data.papers,"search-results");
-  } catch(e) {
-    showError("search-results","Cannot connect to backend. Make sure server is running on port 8000.");
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  const m = PANELS[name];
+  document.getElementById('topbar-title').textContent = m.title;
+  document.getElementById('topbar-desc').textContent  = m.desc;
+  // topbar badge
+  document.getElementById('topbar-right').innerHTML =
+    `<span class="topbar-badge">${m.badge}</span>`;
+  // download button for relevant panels
+  if(['litreview','plagiarism','aidetect'].includes(name)){
+    document.getElementById('topbar-right').innerHTML +=
+      ` <button class="topbar-action-btn" onclick="downloadReport('${name}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Report
+        </button>`;
   }
 }
 
-/* ── 2. PDF HANDLERS ── */
-function handleDrop(e, inputId, isPlagiarism) {
-  e.preventDefault();
-  e.currentTarget.classList.remove("drag");
-  const file = e.dataTransfer.files[0];
-  if (file && file.type==="application/pdf")
-    isPlagiarism ? uploadPlagiarismPDF(file) : uploadSummarizePDF(file);
-  else alert("Please upload a PDF file.");
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function loading(id, msg){
+  document.getElementById(id).innerHTML =
+    `<div class="loading-state"><div class="spinner"></div><div class="loading-text">${msg}</div></div>`;
 }
-function handleSummarizePDF(input) { if (input.files[0]) uploadSummarizePDF(input.files[0]); }
-function handlePlagiarismPDF(input) { if (input.files[0]) uploadPlagiarismPDF(input.files[0]); }
-
-async function uploadSummarizePDF(file) {
-  showLoading("pdf-output","Analyzing PDF — 15–20 seconds...");
-  try {
-    const fd = new FormData(); fd.append("file",file);
-    const res = await fetch(BACKEND+"/upload-pdf",{method:"POST",body:fd});
-    const data = await res.json();
-    if (data.error) { showError("pdf-output",data.error); return; }
-    const tc = data.text_content||"";
-    document.getElementById("pdf-output").innerHTML =
-      '<div class="pdf-card">' +
-        '<div class="pdf-header"><div style="font-size:30px">&#128196;</div>' +
-        '<div><div style="font-size:15px;font-weight:600;color:var(--text-1)">'+data.filename+'</div>' +
-        '<div style="font-size:12px;color:var(--text-3);margin-top:2px">'+data.pages+' pages &nbsp;·&nbsp; '+(data.characters||0).toLocaleString()+' characters</div></div></div>' +
-        '<div class="card-actions">' +
-          '<button class="btn sm green" onclick="sendToSummarize('+JSON.stringify(tc)+')">&#128203; Summarize</button>' +
-          '<button class="btn sm" onclick="sendPDFToChat('+JSON.stringify(data.filename)+','+JSON.stringify(tc)+')">&#128172; Ask AI</button>' +
-          '<button class="btn sm" style="border-color:var(--danger);color:var(--danger)" onclick="sendToPlagiarism('+JSON.stringify(tc.substring(0,3000))+')">&#128270; Check Plagiarism</button>' +
-        '</div>' +
-      '</div>' +
-      '<div class="output-label" style="margin-top:18px">AI Analysis</div>' +
-      '<div class="analysis-box">'+(data.analysis||"").replace(/\n/g,"<br>")+'</div>';
-  } catch(e) { showError("pdf-output","Upload failed. Check server."); }
+function error(id, msg){
+  document.getElementById(id).innerHTML =
+    `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Something went wrong</div><div class="error-state-desc">${msg}</div></div></div>`;
+}
+async function post(ep, body){
+  const r = await fetch(API+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('Server error '+r.status);
+  return r.json();
+}
+function copyText(text){ navigator.clipboard.writeText(text).then(()=>alert('Copied!')); }
+function downloadTxt(text, filename){
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,'+encodeURIComponent(text);
+  a.download = filename+'.txt'; a.click();
+}
+function downloadReport(panel){
+  const els = {litreview:'lit-review-text', plagiarism:'plag-report-text', aidetect:'aidet-report-text'};
+  const el = document.getElementById(els[panel]);
+  if(el) downloadTxt(el.innerText, panel+'-report');
+  else alert('Generate a report first.');
 }
 
-async function uploadPlagiarismPDF(file) {
-  document.getElementById("plag-pdf-status").innerHTML =
-    '<div class="loading"><div class="spinner"></div>Extracting text from PDF...</div>';
-  try {
-    const fd = new FormData(); fd.append("file",file);
-    const res = await fetch(BACKEND+"/upload-pdf-plagiarism",{method:"POST",body:fd});
-    const data = await res.json();
-    if (data.error) {
-      document.getElementById("plag-pdf-status").innerHTML = '<div class="error-box">&#10060; '+data.error+'</div>';
+/* ══════════════════════════════════════
+   1. SEARCH PAPERS
+══════════════════════════════════════ */
+async function doSearch(){
+  const q = document.getElementById('search-q').value.trim();
+  if(!q){alert('Please enter a search topic.');return;}
+  loading('search-results','Searching arXiv and computing semantic rankings — first search may take 20–30s...');
+  try{
+    const data = await post('/semantic-search',{query:q});
+    if(data.error){error('search-results',data.error);return;}
+    const papers = data.papers||[];
+    if(!papers.length){
+      document.getElementById('search-results').innerHTML =
+        `<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="empty-title">No Results Found</div><div class="empty-desc">Try different keywords or a broader topic</div></div>`;
       return;
     }
-    document.getElementById("plagiarism-input").value = data.text;
-    document.getElementById("plag-pdf-status").innerHTML =
-      '<div class="info-box green">&#9989; <b>'+data.filename+'</b> — '+
-      data.pages+' pages, '+(data.characters||0).toLocaleString()+
-      ' characters extracted. Text loaded below. Click Check for Plagiarism.</div>';
-  } catch(e) {
-    document.getElementById("plag-pdf-status").innerHTML = '<div class="error-box">&#10060; PDF upload failed.</div>';
-  }
-}
-
-function sendToSummarize(text) {
-  document.getElementById("summarize-input").value = text;
-  document.getElementById("summarize-input").scrollIntoView({behavior:"smooth"});
-}
-function sendPDFToChat(fn,tc) {
-  document.getElementById("chat-input").value =
-    `I uploaded "${fn}".\n\nContent:\n${tc}\n\nPlease analyze this paper.`;
-  switchPanel("chat");
-}
-function sendToPlagiarism(text) {
-  document.getElementById("plagiarism-input").value = text;
-  switchPanel("plagiarism");
-}
-
-/* ── 3. SUMMARIZE ── */
-async function doSummarize() {
-  const text  = document.getElementById("summarize-input").value.trim();
-  const style = document.getElementById("summary-style").value;
-  if (!text) { alert("Please paste some text first."); return; }
-  showLoading("summary-output","Generating summary...");
-  try {
-    const data = await post("/summarize",{query:text,style:style});
-    document.getElementById("summary-output").innerHTML =
-      '<div class="output-label">'+style+'</div>' +
-      '<div class="output-box">'+data.summary.replace(/\n/g,"<br>")+'</div>';
-  } catch(e) { showError("summary-output","Summarization failed."); }
-}
-
-/* ── 4. LITERATURE REVIEW ── */
-async function doLitReview() {
-  const topic = document.getElementById("litreview-input").value.trim();
-  if (!topic) { alert("Please enter a topic."); return; }
-  showLoading("litreview-output","Fetching 12 papers and generating review — 30–45 seconds...");
-  try {
-    const data = await post("/literature-review",{query:topic});
-    if (data.error) { showError("litreview-output",data.error); return; }
-    document.getElementById("litreview-output").innerHTML =
-      '<div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">' +
-        '<span class="topbar-badge">&#128196; '+data.papers_used+' papers</span>' +
-        '<button class="btn sm primary" onclick="copyEl(\'review-text\')">&#128203; Copy</button>' +
-        '<button class="btn sm" onclick="downloadText(\'review-text\',\'literature-review\')">&#128229; Download</button>' +
-      '</div>' +
-      '<div class="analysis-box" id="review-text">'+(data.review||"").replace(/\n/g,"<br>")+'</div>';
-  } catch(e) { showError("litreview-output","Literature review failed."); }
-}
-
-/* ── 5. PLAGIARISM ── */
-async function doPlagiarismCheck() {
-  const text = document.getElementById("plagiarism-input").value.trim();
-  if (!text || text.length < 50) { alert("Please enter at least 50 characters."); return; }
-  showLoading("plagiarism-output","Running n-gram phrase matching + sentence similarity — 20–40 seconds...");
-  try {
-    const data = await post("/check-plagiarism",{text:text});
-    if (data.error) { showError("plagiarism-output",data.error); return; }
-
-    const score = data.overall_score||0;
-    const rc    = score>40?"high":score>15?"medium":"low";
-    const emoji = score>40?"&#128308;":score>15?"&#128992;":"&#128994;";
-
-    let html = `
-      <div class="stat-row">
-        <div class="stat-card ${score>40?"red":score>15?"orange":"green"}">
-          <div class="stat-num">${score}%</div><div class="stat-lbl">Similarity Score</div>
+    let html = `<div style="margin-bottom:14px"><span style="font-size:13px;color:var(--text-3)">Results for: <b style="color:var(--text-1)">"${q}"</b> &nbsp;·&nbsp; Found ${papers.length} relevant papers</span></div>`;
+    papers.forEach((p,i)=>{
+      const fa  = (p.abstract||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;');
+      const sc  = p.similarity_score||0;
+      const ml  = p.match_level||'';
+      const scClass = ml==='Excellent Match'?'msb-excellent':ml==='Good Match'?'msb-good':ml==='Partial Match'?'msb-partial':'msb-weak';
+      const isPub = p.status==='published';
+      html += `<div class="paper-card">
+        <div class="paper-card-num">${i+1}</div>
+        <div class="paper-card-body">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            ${isPub?`<span class="badge badge-green">✓ Published</span>`:`<span class="badge badge-yellow">Preprint</span>`}
+          </div>
+          <div class="paper-card-title" onclick="sendToSummarize('${fa.substring(0,500)}')">${p.title||'Untitled'}</div>
+          <div class="paper-card-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${p.authors||'Unknown'}</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${p.year||'N/A'} · arXiv${p.arxiv_id?' · '+p.arxiv_id:''}</span>
+          </div>
+          <div class="paper-card-abstract">${(p.abstract||'').substring(0,240)}...</div>
+          <div class="paper-card-actions">
+            <button class="btn btn-primary btn-sm" onclick="sendToSummarize('${fa.substring(0,800)}')">Summarize</button>
+            ${p.pdf_url?`<a href="${p.pdf_url}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none">↓ Download PDF</a>`:''}
+            <button class="btn btn-secondary btn-sm" onclick="sendToChat('${p.title.replace(/'/g,"&#39;")}','${fa.substring(0,400)}')">Ask AI</button>
+            <button class="btn btn-secondary btn-sm" onclick="sendToPlag('${fa.substring(0,800)}')">Plagiarism</button>
+          </div>
         </div>
-        <div class="stat-card ${score>40?"red":score>15?"orange":"green"}">
-          <div class="stat-num" style="font-size:18px">${emoji} ${data.risk_level}</div>
-          <div class="stat-lbl">Risk Level</div>
+        <div class="paper-card-score">
+          <div class="match-score-box ${scClass}">
+            <div class="score-pct">${sc}%</div>
+            <div class="score-label">${ml}</div>
+          </div>
         </div>
-        <div class="stat-card accent">
-          <div class="stat-num">${data.papers_checked||0}</div>
-          <div class="stat-lbl">Papers Checked</div>
-        </div>
-      </div>
-      <div class="score-meter-wrap">
-        <div class="score-meter-label"><span>Plagiarism Similarity</span><span>${score}%</span></div>
-        <div class="score-meter"><div class="score-fill ${rc}" style="width:${Math.max(score,3)}%">${score}%</div></div>
       </div>`;
+    });
+    document.getElementById('search-results').innerHTML = html;
+  }catch(e){error('search-results','Unable to connect to backend. Make sure the server is running on port 8000.');}
+}
 
-    if (data.matches && data.matches.length > 0) {
-      html += `<div class="section-title">&#128270; Similar Papers Found</div>`;
-      data.matches.forEach(m => {
-        const mc = m.combined_score>40?"high":m.combined_score>15?"medium":"low";
-        const re = m.risk_level==="High Risk"?"&#128308;":m.risk_level==="Medium Risk"?"&#128992;":"&#128994;";
-        html += `<div class="match-item">
-          <div class="match-title">${re} ${m.title}</div>
-          <div class="match-meta">${m.authors} &nbsp;·&nbsp; ${m.year} &nbsp;·&nbsp; ${m.risk_level}</div>
-          <div class="match-scores">
-            <span class="match-score-pill ${mc}">Combined: ${m.combined_score}%</span>
-            <span class="match-score-pill ${m.ngram_score>10?"high":"low"}">Phrase Match: ${m.ngram_score}%</span>
-            <span class="match-score-pill ${m.sentence_score>60?"high":"low"}">Sentence Sim: ${m.sentence_score}%</span>
-          </div>`;
-        if (m.flagged_sentences && m.flagged_sentences.length > 0) {
-          html += `<div style="font-size:11px;font-weight:700;color:var(--danger);margin-top:6px">&#9888;&#65039; Similar sentences:</div>`;
-          m.flagged_sentences.forEach(fs =>
-            html += `<div class="flagged-sentence">"${fs.sentence}" — ${fs.similarity}% similar</div>`);
-        }
-        if (m.pdf_url) html += `<div style="margin-top:8px"><a href="${m.pdf_url}" target="_blank" class="btn sm" style="text-decoration:none">&#128196; View Paper</a></div>`;
-        html += `</div>`;
-      });
+/* ══════════════════════════════════════
+   2. PDF UPLOAD
+══════════════════════════════════════ */
+function handlePDFDrop(e, isPlag){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type==='application/pdf') uploadPDF(f, isPlag);
+  else alert('Please upload a PDF file.');
+}
+
+async function uploadPDF(file, isPlag){
+  if(!file) return;
+  const ep = isPlag ? '/upload-pdf-plagiarism' : '/upload-pdf';
+  const outId = isPlag ? 'plag-pdf-status' : 'pdf-upload-area';
+  if(isPlag) loading('plag-pdf-status','Extracting text from PDF...');
+  else loading('pdf-upload-area','Analyzing PDF — this may take 15–20 seconds...');
+  try{
+    const fd = new FormData(); fd.append('file',file);
+    const res = await fetch(API+ep,{method:'POST',body:fd});
+    const data = await res.json();
+    if(data.error){error(outId,data.error);return;}
+    if(isPlag){
+      document.getElementById('plag-text').value = data.text||'';
+      document.getElementById('plag-pdf-status').innerHTML =
+        `<div class="callout callout-green">✓ <b>${data.filename}</b> extracted — ${data.pages} pages, ${(data.characters||0).toLocaleString()} characters. Text loaded below.</div>`;
     } else {
-      html += `<div class="info-box green" style="margin-top:10px">&#9989; No significant phrase matches found in checked arXiv papers.</div>`;
+      renderPDFResult(data);
     }
-    html += `<div class="section-title" style="margin-top:16px">&#129302; AI Analysis</div>
-      <div class="analysis-box">${(data.analysis||"").replace(/\n/g,"<br>")}</div>`;
-    document.getElementById("plagiarism-output").innerHTML = html;
-  } catch(e) { showError("plagiarism-output","Plagiarism check failed. Check your server."); }
+  }catch(e){error(outId,'Upload failed. Check server connection.');}
 }
 
-/* ── 6. AI DETECTION ── */
-async function doAIDetection() {
-  const text = document.getElementById("aidetect-input").value.trim();
-  if (!text || text.length < 100) { alert("Please enter at least 100 characters."); return; }
-  showLoading("aidetect-output","Running multi-signal AI detection analysis...");
-  try {
-    const data = await post("/detect-ai",{text:text});
-    if (data.error) { showError("aidetect-output",data.error); return; }
+function renderPDFResult(data){
+  document.getElementById('pdf-upload-area').style.display='none';
+  const g = document.getElementById('pdf-main-grid');
+  g.style.display='grid';
+  g.innerHTML = `
+    <div class="flex flex-col gap-16">
+      <div class="card card-pad">
+        <div class="section-heading">Uploaded PDF</div>
+        <div class="flex gap-16 items-center mt-12">
+          <div class="pdf-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div style="font-size:18px;font-weight:700;color:var(--text-1)">${data.filename}</div>
+            <div style="font-size:13px;color:var(--text-3);margin-top:3px">${data.pages} pages &nbsp;·&nbsp; ${(data.characters||0).toLocaleString()} characters</div>
+            <div style="font-size:13px;color:var(--success);margin-top:6px;font-weight:600">✓ File uploaded successfully</div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-8 mt-16">
+          <button class="btn btn-primary" style="justify-content:center" onclick="sendToSummarize('${(data.text_content||'').substring(0,800).replace(/'/g,"&#39;").replace(/\n/g,' ')}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Summarize Paper
+          </button>
+          <button class="btn btn-secondary" style="justify-content:center" onclick="sendToChat('${data.filename}','${(data.text_content||'').substring(0,400).replace(/'/g,"&#39;").replace(/\n/g,' ')}')">Ask AI About This Paper</button>
+          <button class="btn btn-secondary" style="justify-content:center;border-color:var(--danger-bd);color:var(--danger)" onclick="sendToPlag('${(data.text_content||'').substring(0,800).replace(/'/g,"&#39;").replace(/\n/g,' ')}')">Check Plagiarism</button>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-heading">Document Statistics</div>
+        <div class="pdf-stat-bar mt-8">
+          <div class="pdf-stat-item">
+            <div class="pdf-stat-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div><div class="pdf-stat-num">${data.pages}</div><div class="pdf-stat-lbl">Pages</div></div>
+          </div>
+          <div class="pdf-stat-item">
+            <div class="pdf-stat-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
+            <div><div class="pdf-stat-num">${(data.characters||0).toLocaleString()}</div><div class="pdf-stat-lbl">Characters</div></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-secondary" onclick="resetPDFUpload()">Upload Another PDF</button>
+    </div>
+    <div class="card card-pad">
+      <div class="section-heading">AI Generated Analysis</div>
+      <div class="analysis-text mt-12" id="pdf-analysis-text">${(data.analysis||'No analysis available.').replace(/\n/g,'<br>')}</div>
+    </div>`;
+}
+function resetPDFUpload(){
+  document.getElementById('pdf-upload-area').style.display='block';
+  document.getElementById('pdf-main-grid').style.display='none';
+  document.getElementById('pdf-main-grid').innerHTML='';
+}
 
-    const score   = data.ai_score||0;
-    const rc      = score>65?"high":score>40?"medium":"low";
-    const stats   = data.stats||{};
-    const verdict = data.verdict||"Unknown";
+/* ══════════════════════════════════════
+   3. SUMMARIZE
+══════════════════════════════════════ */
+async function doSummarize(){
+  const text  = document.getElementById('summarize-text').value.trim();
+  const style = document.getElementById('summary-style').value;
+  if(!text){alert('Please paste some text first.');return;}
+  loading('summary-output','Generating summary...');
+  try{
+    const data = await post('/summarize',{query:text,style:style});
+    document.getElementById('summary-output').innerHTML =
+      `<div style="background:var(--blue-lt);border:1px solid var(--blue-mid);border-radius:var(--radius-sm);padding:16px 18px;font-size:14px;line-height:1.85;color:var(--text-1)">${(data.summary||'').replace(/\n/g,'<br>').replace(/•/g,'<span style="color:var(--blue);font-weight:700">•</span>')}</div>
+       <div class="flex gap-8 mt-12">
+         <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('summary-output').innerText)">Copy</button>
+       </div>`;
+  }catch(e){error('summary-output','Summarization failed. Check server.');}
+}
 
-    if (score > 40) document.getElementById("send-humanize-btn").style.display = "inline-flex";
+/* ══════════════════════════════════════
+   4. LITERATURE REVIEW
+══════════════════════════════════════ */
+const LIT_SECTIONS = ['Introduction','Thematic Analysis','Research Trends','Research Gaps','Future Directions','Conclusion','References'];
+async function doLitReview(){
+  const topic = document.getElementById('lit-topic').value.trim();
+  if(!topic){alert('Please enter a research topic.');return;}
+  document.getElementById('lit-center').innerHTML =
+    `<div class="loading-state"><div class="spinner"></div><div class="loading-text">Fetching papers from arXiv and generating review — 30–45 seconds...</div></div>`;
+  document.getElementById('lit-stats-card').style.display='none';
+  document.getElementById('lit-outline-card').style.display='none';
+  try{
+    const data = await post('/literature-review',{query:topic});
+    if(data.error){
+      document.getElementById('lit-center').innerHTML =
+        `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Generation Failed</div><div class="error-state-desc">${data.error}</div></div></div>`;
+      return;
+    }
+    // Center — review
+    document.getElementById('lit-center').innerHTML =
+      `<div class="flex justify-between items-center" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+        <div class="section-heading" style="margin:0">Generated Literature Review</div>
+        <div class="flex gap-8">
+          <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('lit-review-text').innerText)">Copy</button>
+          <button class="btn btn-secondary btn-sm" onclick="downloadTxt(document.getElementById('lit-review-text').innerText,'literature-review')">↓ Download</button>
+        </div>
+      </div>
+      <div class="lit-review-body" id="lit-review-text">${(data.review||'').replace(/\n/g,'<br>')}</div>`;
 
-    const uniformity   = Math.min(100,Math.max(0,100-(stats.sentence_variance||0)*5));
-    const aiPhraseScore= Math.min(100,(stats.ai_phrases_found||0)*15);
-    const longSentScore= Math.min(100,Math.max(0,((stats.avg_sentence_len||0)-10)*3));
+    // Left — stats
+    const n = data.papers_used||0;
+    document.getElementById('lit-stats-card').style.display='block';
+    document.getElementById('lit-stats-body').innerHTML = `
+      <div class="lit-stat-row">
+        <div class="lit-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <span class="lit-stat-label">Papers Analyzed</span><span class="lit-stat-value">${n}</span>
+      </div>
+      <div class="lit-stat-row">
+        <div class="lit-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+        <span class="lit-stat-label">Sections Generated</span><span class="lit-stat-value">${LIT_SECTIONS.length}</span>
+      </div>
+      <div class="lit-stat-row">
+        <div class="lit-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <span class="lit-stat-label">Language Model</span><span class="lit-stat-value" style="font-size:11px">Llama 3.3 70B</span>
+      </div>`;
+
+    // Right — outline
+    document.getElementById('lit-outline-card').style.display='block';
+    document.getElementById('lit-outline-body').innerHTML = LIT_SECTIONS.map((s,i)=>
+      `<div class="lit-outline-item"><div class="lit-outline-num">${i+1}</div><span>${s}</span></div>`
+    ).join('');
+
+  }catch(e){
+    document.getElementById('lit-center').innerHTML =
+      `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Connection Error</div><div class="error-state-desc">Unable to connect to backend.</div></div></div>`;
+  }
+}
+
+/* ══════════════════════════════════════
+   5. PLAGIARISM
+══════════════════════════════════════ */
+async function doPlagiarism(){
+  const text = document.getElementById('plag-text').value.trim();
+  if(!text||text.length<50){alert('Please enter at least 50 characters.');return;}
+  loading('plag-output','Running phrase matching and sentence similarity analysis — 20–40 seconds...');
+  try{
+    const data = await post('/check-plagiarism',{text:text});
+    if(data.error){error('plag-output',data.error);return;}
+    const score = data.overall_score||0;
+    const rc    = score>40?'high':score>15?'medium':'low';
+    const rl    = data.risk_level||'Low Risk';
+    const rClass= rl.includes('High')?'sc-red':rl.includes('Medium')?'sc-orange':'sc-green';
+    const words = text.split(/\s+/).filter(Boolean).length;
+    const chars = text.length;
+    const matches = data.matches||[];
 
     let html = `
-      <div class="stat-row">
-        <div class="stat-card ${score>65?"red":score>40?"orange":"green"}">
-          <div class="stat-num">${score}%</div><div class="stat-lbl">AI Score</div>
-        </div>
-        <div class="stat-card ${score>65?"red":score>40?"orange":"green"}">
-          <div class="stat-num" style="font-size:14px">${verdict}</div><div class="stat-lbl">Verdict</div>
-        </div>
-        <div class="stat-card accent">
-          <div class="stat-num">${stats.word_count||0}</div><div class="stat-lbl">Words</div>
-        </div>
-        <div class="stat-card accent">
-          <div class="stat-num">${stats.sentence_count||0}</div><div class="stat-lbl">Sentences</div>
+    <div id="plag-report-text" style="display:none">${text}\n\nSimilarity Score: ${score}%\nRisk Level: ${rl}\nPapers Checked: ${data.papers_checked||0}</div>
+    <div class="plag-top-grid">
+      <div class="card card-pad">
+        <div class="section-heading">Input Text</div>
+        <div style="font-size:13px;color:var(--text-2);line-height:1.7;margin-top:8px;max-height:140px;overflow:hidden">${text.substring(0,300)}${text.length>300?'...':''}</div>
+        <div class="flex gap-16 mt-12" style="font-size:13px;color:var(--text-3)">
+          <span>Words: <b style="color:var(--text-1)">${words}</b></span>
+          <span>Characters: <b style="color:var(--text-1)">${chars}</b></span>
         </div>
       </div>
-      <div class="score-meter-wrap">
-        <div class="score-meter-label"><span>AI Probability</span><span>${score}%</span></div>
-        <div class="score-meter"><div class="score-fill ${rc}" style="width:${Math.max(score,3)}%">${score}% AI</div></div>
+      <div class="card card-pad">
+        <div class="section-heading">Results Summary</div>
+        <div class="flex justify-between items-center mt-8">
+          <div>
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:3px">Similarity Score</div>
+            <div style="font-size:32px;font-weight:800;color:${score>40?'var(--danger)':score>15?'var(--warn)':'var(--success)'};">${score}%</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:3px">Risk Level</div>
+            <div style="font-size:18px;font-weight:700;color:${score>40?'var(--danger)':score>15?'var(--warn)':'var(--success)'}">${rl}</div>
+          </div>
+        </div>
+        <div class="score-meter-wrap mt-12">
+          <div class="score-meter-track"><div class="score-meter-fill smf-${rc}" style="width:${Math.max(score,2)}%"></div></div>
+        </div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:8px">Papers Checked: <b style="color:var(--text-1)">${data.papers_checked||0}</b></div>
       </div>
-      <div class="section-title">&#128202; Signal Analysis</div>
-      <div class="ai-indicators">
-        <div class="ai-indicator-row">
-          <div class="ai-indicator-label">Sentence Uniformity</div>
-          <div class="ai-indicator-bar"><div class="ai-indicator-fill ${uniformity>60?"high":uniformity>35?"medium":"low"}" style="width:${uniformity}%"></div></div>
-          <div class="ai-indicator-val">${Math.round(uniformity)}%</div>
-        </div>
-        <div class="ai-indicator-row">
-          <div class="ai-indicator-label">AI Phrases Found</div>
-          <div class="ai-indicator-bar"><div class="ai-indicator-fill ${aiPhraseScore>60?"high":aiPhraseScore>30?"medium":"low"}" style="width:${aiPhraseScore}%"></div></div>
-          <div class="ai-indicator-val">${stats.ai_phrases_found||0}</div>
-        </div>
-        <div class="ai-indicator-row">
-          <div class="ai-indicator-label">Avg Sentence Length</div>
-          <div class="ai-indicator-bar"><div class="ai-indicator-fill ${longSentScore>60?"high":longSentScore>30?"medium":"low"}" style="width:${longSentScore}%"></div></div>
-          <div class="ai-indicator-val">${stats.avg_sentence_len||0}w</div>
-        </div>
-        <div class="ai-indicator-row">
-          <div class="ai-indicator-label">Length Variance</div>
-          <div class="ai-indicator-bar"><div class="ai-indicator-fill ${(stats.sentence_variance||0)<3?"high":(stats.sentence_variance||0)<6?"medium":"low"}" style="width:${Math.min(100,Math.max(5,100-(stats.sentence_variance||0)*8))}%"></div></div>
-          <div class="ai-indicator-val">${stats.sentence_variance||0}</div>
-        </div>
+    </div>`;
+
+    if(matches.length){
+      html += `<div class="card" style="overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border)"><div class="section-heading" style="margin:0">Top Matched Sources</div></div>
+        <table class="matched-sources-table">
+          <thead><tr><th>#</th><th>Paper Title</th><th>Phrase Match</th><th>Sentence Similarity</th><th>Overall Similarity</th><th>Risk Level</th></tr></thead>
+          <tbody>
+            ${matches.map((m,i)=>`
+            <tr>
+              <td style="color:var(--text-4);font-weight:600">${i+1}</td>
+              <td><div style="font-weight:600;color:var(--text-1);margin-bottom:3px">${m.title}</div><div style="font-size:11px;color:var(--text-4)">${m.authors||''} · ${m.year||''}</div>${m.pdf_url?`<a href="${m.pdf_url}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;margin-top:6px;display:inline-flex">View Paper</a>`:''}</td>
+              <td style="font-weight:600">${m.ngram_score||0}%</td>
+              <td style="font-weight:600">${m.sentence_score||0}%</td>
+              <td style="font-weight:600">${m.combined_score||0}%</td>
+              <td><span class="risk-pill ${m.risk_level?.includes('High')?'risk-high':m.risk_level?.includes('Medium')?'risk-medium':'risk-low'}">${m.risk_level||'Low Risk'}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
       </div>`;
-
-    html += score > 40
-      ? `<div class="info-box orange" style="margin:12px 0">
-          <b>&#9757;&#65039; AI content detected.</b> Use the Humanizer to rewrite and reduce the score.
-          <div style="margin-top:8px"><button class="btn sm orange" onclick="sendCurrentToHumanize()">&#9997;&#65039; Send to Humanizer</button></div>
-         </div>`
-      : `<div class="info-box green" style="margin:12px 0">&#9989; Your text appears naturally human-written.</div>`;
-
-    html += `<div class="section-title">&#129302; Detailed Analysis</div>
-      <div class="analysis-box">${(data.analysis||"").replace(/\n/g,"<br>")}</div>`;
-    document.getElementById("aidetect-output").innerHTML = html;
-  } catch(e) { showError("aidetect-output","AI detection failed. Check your server."); }
-}
-
-function sendCurrentToHumanize() {
-  document.getElementById("humanize-input").value = document.getElementById("aidetect-input").value.trim();
-  switchPanel("humanize");
-}
-
-/* ── 7. HUMANIZER ── */
-async function doHumanize() {
-  const text  = document.getElementById("humanize-input").value.trim();
-  const style = document.getElementById("humanize-style").value;
-  if (!text || text.length < 50) { alert("Please enter at least 50 characters."); return; }
-  showLoading("humanize-output","Rewriting in human style — 10–15 seconds...");
-  try {
-    const data = await post("/humanize",{text:text,style:style});
-    if (data.error) { showError("humanize-output",data.error); return; }
-
-    const humanized = data.humanized_text||"";
-    const changes   = data.changes_made||[];
-    let changesHtml = "";
-    if (changes.length > 0) {
-      changesHtml = '<div class="section-title" style="margin-top:16px">&#9989; Changes Made</div>' +
-        '<div class="info-box green">'+changes.map(c=>`• ${c}`).join("<br>")+'</div>';
+    } else {
+      html += `<div class="callout callout-green">✓ No significant matches found in checked arXiv papers.</div>`;
     }
 
-    document.getElementById("humanize-output").innerHTML =
-      `<div class="humanize-grid">
-        <div class="text-panel">
-          <div class="text-panel-label">&#129302; Original — ${data.original_words} words</div>
-          <div class="text-panel-content">${text}</div>
-        </div>
-        <div class="text-panel">
-          <div class="text-panel-label">&#128100; Humanized — ${data.humanized_words} words</div>
-          <div class="text-panel-content" id="humanized-text">${humanized}</div>
-        </div>
-      </div>
-      ${changesHtml}
-      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-        <button class="btn sm primary" onclick="copyEl('humanized-text')">&#128203; Copy</button>
-        <button class="btn sm orange" onclick="testHumanized()">&#129302; Test AI Score</button>
-        <button class="btn sm red" onclick="checkHumanizedPlagiarism()">&#128270; Plagiarism</button>
-        <button class="btn sm" onclick="downloadText('humanized-text','humanized-text')">&#128229; Download</button>
-      </div>
-      <div class="info-box orange" style="margin-top:14px">
-        <b>&#128161; Tip:</b> ${data.tip||"Run AI Detection again to confirm your score improved."}
-      </div>`;
-  } catch(e) { showError("humanize-output","Humanization failed."); }
+    if(data.analysis){
+      html += `<div class="card card-pad"><div class="section-heading">AI Analysis</div><div style="font-size:14px;color:var(--text-1);line-height:1.85;margin-top:8px;white-space:pre-wrap">${data.analysis}</div></div>`;
+    }
+    document.getElementById('plag-output').innerHTML = html;
+  }catch(e){error('plag-output','Plagiarism check failed. Check server connection.');}
 }
 
-function testHumanized() {
-  document.getElementById("aidetect-input").value = document.getElementById("humanized-text").innerText;
-  switchPanel("aidetect");
+/* ══════════════════════════════════════
+   6. AI DETECTION
+══════════════════════════════════════ */
+async function doAIDetect(){
+  const text = document.getElementById('aidet-text').value.trim();
+  if(!text||text.length<100){alert('Please enter at least 100 characters.');return;}
+  loading('aidet-output','Analyzing AI signals — word patterns, sentence structure, phrase analysis...');
+  try{
+    const data = await post('/detect-ai',{text:text});
+    if(data.error){error('aidet-output',data.error);return;}
+    const score  = data.ai_score||0;
+    const stats  = data.stats||{};
+    const verdict= data.verdict||'Unknown';
+    const rClass = score>65?'sc-red':score>40?'sc-orange':'sc-green';
+    if(score>40) document.getElementById('to-humanize-btn').style.display='inline-flex';
+
+    const readMinutes = Math.floor((stats.word_count||0)/200);
+    const readSecs    = Math.round(((stats.word_count||0)/200 - readMinutes)*60);
+
+    let html = `
+    <div id="aidet-report-text" style="display:none">AI Score: ${score}%\nVerdict: ${verdict}\nWords: ${stats.word_count||0}\nSentences: ${stats.sentence_count||0}\nAvg Sentence Length: ${stats.avg_sentence_len||0}\nLength Variance: ${stats.sentence_variance||0}\nAI Phrases Found: ${stats.ai_phrases_found||0}</div>
+    <div class="ai-det-grid">
+      <div class="card card-pad">
+        <div class="flex items-center gap-8 mb-12" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          <div class="section-heading" style="margin:0">INPUT TEXT STATISTICS</div>
+        </div>
+        <div class="stat-list-item">
+          <div class="stat-list-icon" style="background:var(--blue-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
+          <span class="stat-list-label">Words</span><span class="stat-list-value">${(stats.word_count||0).toLocaleString()}</span>
+        </div>
+        <div class="stat-list-item">
+          <div class="stat-list-icon" style="background:#F0FDF4"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+          <span class="stat-list-label">Sentences</span><span class="stat-list-value">${stats.sentence_count||0}</span>
+        </div>
+        <div class="stat-list-item">
+          <div class="stat-list-icon" style="background:var(--indigo-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <span class="stat-list-label">Average Sentence Length</span><span class="stat-list-value">${stats.avg_sentence_len||0} words</span>
+        </div>
+        <div class="stat-list-item">
+          <div class="stat-list-icon" style="background:var(--warn-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <span class="stat-list-label">Length Variance</span><span class="stat-list-value">${stats.sentence_variance||0}</span>
+        </div>
+        <div class="stat-list-item">
+          <div class="stat-list-icon" style="background:var(--danger-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+          <span class="stat-list-label">AI Phrases Found</span><span class="stat-list-value">${stats.ai_phrases_found||0}</span>
+        </div>
+        <div class="stat-list-item">
+          <div class="stat-list-icon" style="background:#F0FDF4"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <span class="stat-list-label">Reading Time</span><span class="stat-list-value">${readMinutes} min ${readSecs} sec</span>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="flex items-center gap-8" style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div class="section-heading" style="margin:0">AI DETECTION RESULT</div>
+        </div>
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:64px;font-weight:800;letter-spacing:-2px;color:${score>65?'var(--danger)':score>40?'var(--warn)':'var(--success)'}">${score}%</div>
+          <div style="font-size:18px;font-weight:600;color:${score>65?'var(--danger)':score>40?'var(--warn)':'var(--success)'};margin-top:4px">${verdict}</div>
+        </div>
+        <div class="ai-meter-track mt-12">
+          <div class="ai-meter-thumb" style="left:${Math.max(2,Math.min(98,score))}%"></div>
+        </div>
+        <div class="ai-meter-labels mt-4"><span>0%</span><span>50%</span><span>100%</span></div>
+        <div class="callout callout-blue mt-16" style="font-size:12px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          This is an estimated result and not definitive proof.
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <div class="flex items-center gap-8" style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <div class="section-heading" style="margin:0">DETAILED ANALYSIS</div>
+      </div>
+      <div class="detail-analysis-card">
+        <div class="detail-card">
+          <div class="detail-card-icon" style="background:var(--indigo-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
+          <div class="detail-card-num" style="color:var(--indigo)">${stats.avg_sentence_len||0}</div>
+          <div class="detail-card-label">Avg. Sentence Length</div>
+          <div class="detail-card-desc">AI-generated text often has longer, more uniform sentences.</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-icon" style="background:var(--warn-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+          <div class="detail-card-num" style="color:var(--warn)">${stats.sentence_variance||0}</div>
+          <div class="detail-card-label">Length Variance</div>
+          <div class="detail-card-desc">Lower variance indicates more uniform sentence structure.</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-icon" style="background:var(--danger-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+          <div class="detail-card-num" style="color:var(--danger)">${stats.ai_phrases_found||0}</div>
+          <div class="detail-card-label">AI Phrases Found</div>
+          <div class="detail-card-desc">Certain phrases are more common in AI-generated text.</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-icon" style="background:var(--blue-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div class="detail-card-num" style="color:var(--blue)">${(stats.word_count||0).toLocaleString()}</div>
+          <div class="detail-card-label">Total Words</div>
+          <div class="detail-card-desc">Text length can influence detection accuracy.</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-icon" style="background:var(--success-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+          <div class="detail-card-num" style="color:var(--success)">${stats.sentence_count||0}</div>
+          <div class="detail-card-label">Total Sentences</div>
+          <div class="detail-card-desc">AI text may have repetitive or predictable patterns.</div>
+        </div>
+      </div>
+
+      ${data.analysis?`<div class="callout callout-gray mt-16" style="font-size:13px;line-height:1.8"><b>Detailed AI Analysis:</b><br>${data.analysis.replace(/\n/g,'<br>')}</div>`:''}
+
+      <div class="callout callout-yellow mt-16">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <b>Important Note</b><br>AI detection is probabilistic and may not always be accurate. Results should be used as a guideline, not as final evidence.
+      </div>
+    </div>`;
+    document.getElementById('aidet-output').innerHTML = html;
+  }catch(e){error('aidet-output','AI detection failed. Check server.');}
 }
-function checkHumanizedPlagiarism() {
-  document.getElementById("plagiarism-input").value = document.getElementById("humanized-text").innerText;
-  switchPanel("plagiarism");
+function sendToHumanize(){
+  const text = document.getElementById('aidet-text').value.trim();
+  document.getElementById('humanize-text').value = text;
+  showPanel('humanize');
 }
 
-/* ── 8. CHAT ── */
-const chatHistory = [];
-const quickPrompts = {
-  gaps:        "What are the main research gaps in [your topic]? Describe 4 specific gaps with reasons.",
-  compare:     "Compare [Method A] vs [Method B] — advantages and disadvantages of each?",
-  methodology: "I am researching [topic]. What research methodology do you recommend and why?",
-  lithelp:     "Help me structure a literature review for my research on [topic].",
-  explain:     "Explain [concept] in simple terms with a real research example."
-};
-function quickAction(type) {
-  document.getElementById("chat-input").value = quickPrompts[type];
-  document.getElementById("chat-input").focus();
+/* ══════════════════════════════════════
+   7. HUMANIZER
+══════════════════════════════════════ */
+async function doHumanize(){
+  const text  = document.getElementById('humanize-text').value.trim();
+  const style = document.getElementById('humanize-style').value;
+  if(!text||text.length<50){alert('Please enter at least 50 characters.');return;}
+  loading('humanize-output','Rewriting in human style — 10–15 seconds...');
+  try{
+    const data = await post('/humanize',{text:text,style:style});
+    if(data.error){error('humanize-output',data.error);return;}
+    const humanized = data.humanized_text||'';
+    const changes   = data.changes_made||[];
+    let html = `
+    <div class="humanize-grid">
+      <div class="text-panel">
+        <div class="text-panel-header">
+          <div class="text-panel-title">Original — ${data.original_words} words</div>
+          <button class="btn btn-secondary btn-sm" onclick="copyText(this.closest('.text-panel').querySelector('.text-panel-body').innerText)">Copy</button>
+        </div>
+        <div class="text-panel-body">${text}</div>
+      </div>
+      <div class="text-panel" style="border-color:var(--success-bd)">
+        <div class="text-panel-header">
+          <div class="text-panel-title" style="color:var(--success)">Humanized — ${data.humanized_words} words</div>
+          <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('humanized-result').innerText)">Copy</button>
+        </div>
+        <div class="text-panel-body" id="humanized-result">${humanized}</div>
+      </div>
+    </div>`;
+    if(changes.length){
+      html += `<div class="callout callout-green"><b>Changes Made:</b><br>${changes.map(c=>`• ${c}`).join('<br>')}</div>`;
+    }
+    html += `<div class="flex gap-8 flex-wrap">
+      <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('humanized-result').innerText)">Copy Humanized</button>
+      <button class="btn btn-secondary btn-sm" onclick="testAIScore()">Test AI Score</button>
+      <button class="btn btn-secondary btn-sm" onclick="checkPlagiarism()">Check Plagiarism</button>
+      <button class="btn btn-secondary btn-sm" onclick="downloadTxt(document.getElementById('humanized-result').innerText,'humanized-text')">↓ Download</button>
+    </div>
+    <div class="callout callout-yellow" style="font-size:13px">${data.tip||'Run AI Detection again to confirm your score improved.'}</div>`;
+    document.getElementById('humanize-output').innerHTML = html;
+  }catch(e){error('humanize-output','Humanization failed. Check server.');}
 }
-async function sendChat() {
-  const input = document.getElementById("chat-input");
+function testAIScore(){
+  document.getElementById('aidet-text').value = document.getElementById('humanized-result').innerText;
+  showPanel('aidetect');
+}
+function checkPlagiarism(){
+  document.getElementById('plag-text').value = document.getElementById('humanized-result').innerText;
+  showPanel('plagiarism');
+}
+
+/* ══════════════════════════════════════
+   8. ASK AI
+══════════════════════════════════════ */
+const chatHist = [];
+function setPrompt(p){ document.getElementById('chat-input').value=p; document.getElementById('chat-input').focus(); }
+async function sendChat(){
+  const input = document.getElementById('chat-input');
   const msg   = input.value.trim();
-  if (!msg) return;
-  input.value = "";
-  const container = document.getElementById("chat-messages");
-  const uDiv = document.createElement("div");
-  uDiv.className = "msg user"; uDiv.textContent = msg;
-  container.appendChild(uDiv);
-  chatHistory.push({role:"user",content:msg});
-  const aDiv = document.createElement("div");
-  aDiv.className = "msg ai";
-  aDiv.innerHTML = '<span class="msg-sender">ResearchAI</span><span style="color:var(--text-3)">Thinking...</span>';
-  container.appendChild(aDiv);
-  container.scrollTop = container.scrollHeight;
-  try {
-    const data  = await post("/chat",{message:msg,history:chatHistory.slice(-6)});
-    const reply = data.reply||"No response.";
-    chatHistory.push({role:"assistant",content:reply});
-    aDiv.innerHTML = '<span class="msg-sender">ResearchAI</span>'+reply.replace(/\n/g,"<br>");
-  } catch(e) {
-    aDiv.innerHTML = '<span class="msg-sender">ResearchAI</span><span style="color:var(--danger)">Failed. Check backend.</span>';
+  if(!msg) return;
+  input.value='';
+  const cont  = document.getElementById('chat-msgs');
+  const uWrap = document.createElement('div'); uWrap.className='msg-wrap user';
+  uWrap.innerHTML = `<div class="msg-label">You</div><div class="msg-bubble user">${msg}</div>`;
+  cont.appendChild(uWrap);
+  chatHist.push({role:'user',content:msg});
+  const aWrap = document.createElement('div'); aWrap.className='msg-wrap ai';
+  aWrap.innerHTML = `<div class="msg-label">Research Assistant</div><div class="msg-bubble ai" id="ai-typing"><div class="spinner" style="width:14px;height:14px;border-width:2px"></div></div>`;
+  cont.appendChild(aWrap);
+  cont.scrollTop = cont.scrollHeight;
+  try{
+    const data = await post('/chat',{message:msg,history:chatHist.slice(-6)});
+    const reply= data.reply||'No response.';
+    chatHist.push({role:'assistant',content:reply});
+    document.getElementById('ai-typing').innerHTML = reply.replace(/\n/g,'<br>');
+    document.getElementById('ai-typing').id='';
+  }catch(e){
+    document.getElementById('ai-typing').innerHTML='<span style="color:var(--danger)">Connection failed. Check backend server.</span>';
   }
-  container.scrollTop = container.scrollHeight;
+  cont.scrollTop = cont.scrollHeight;
 }
 
-/* ── 9. CITATION ── */
-async function doCite() {
-  const title   = document.getElementById("cite-title").value.trim();
-  const authors = document.getElementById("cite-authors").value.trim();
-  const year    = document.getElementById("cite-year").value.trim();
-  const journal = document.getElementById("cite-journal").value.trim();
-  const volume  = document.getElementById("cite-volume").value.trim();
-  const pages   = document.getElementById("cite-pages").value.trim();
-  const style   = document.getElementById("cite-style").value;
-  if (!title) { alert("Please enter the paper title."); return; }
-  showLoading("cite-output","Generating citation...");
-  const details = "Title: "+title+"\nAuthors: "+authors+"\nYear: "+year+
-    "\nJournal/Conference: "+journal+(volume?"\nVolume: "+volume:"")+(pages?"\nPages: "+pages:"");
-  try {
-    const data = await post("/cite",{query:details,style:style});
-    document.getElementById("cite-output").innerHTML =
-      '<div class="output-label">'+style+'</div>' +
-      '<div class="cite-box" id="cite-text">'+data.citation+'</div>' +
-      '<div style="margin-top:12px;display:flex;gap:10px">' +
-        '<button class="btn sm" onclick="copyEl(\'cite-text\')">&#128203; Copy</button>' +
-        '<button class="btn sm" onclick="downloadBibtex(`'+title.replace(/`/g,"'")+
-          '`,`'+authors.replace(/`/g,"'")+'`,`'+year+'`)">&#128229; BibTeX</button></div>';
-  } catch(e) { showError("cite-output","Citation failed."); }
+/* ══════════════════════════════════════
+   9. CITATION
+══════════════════════════════════════ */
+async function doCite(){
+  const title   = document.getElementById('cite-title').value.trim();
+  const authors = document.getElementById('cite-authors').value.trim();
+  const year    = document.getElementById('cite-year').value.trim();
+  const journal = document.getElementById('cite-journal').value.trim();
+  const volume  = document.getElementById('cite-volume').value.trim();
+  const pages   = document.getElementById('cite-pages').value.trim();
+  const style   = document.getElementById('cite-style').value;
+  if(!title){alert('Please enter the paper title.');return;}
+  loading('cite-output','Formatting citation...');
+  const details = `Title: ${title}\nAuthors: ${authors}\nYear: ${year}\nJournal/Conference: ${journal}${volume?'\nVolume: '+volume:''}${pages?'\nPages: '+pages:''}`;
+  try{
+    const data = await post('/cite',{query:details,style:style});
+    document.getElementById('cite-output').innerHTML =
+      `<div style="margin-bottom:12px"><span class="badge badge-blue">${style}</span></div>
+       <div class="cite-result" id="cite-text">${data.citation}</div>
+       <div class="flex gap-8 mt-12">
+         <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('cite-text').innerText)">Copy Citation</button>
+         <button class="btn btn-secondary btn-sm" onclick="downloadBibtex('${title.replace(/'/g,"\\'")}','${authors.replace(/'/g,"\\'")}','${year}')">↓ BibTeX</button>
+       </div>`;
+  }catch(e){error('cite-output','Citation generation failed.');}
+}
+function downloadBibtex(title,authors,year){
+  const key = (authors.split(',')[0]||'Author').trim().replace(/\s/g,'')+year;
+  const bib  = `@article{${key},\n  title={${title}},\n  author={${authors}},\n  year={${year}}\n}`;
+  downloadTxt(bib,'citation');
 }
 
-/* ── UTILS ── */
-function copyEl(id) {
-  navigator.clipboard.writeText(document.getElementById(id).innerText)
-    .then(()=>alert("Copied to clipboard!"));
+/* ══════════════════════════════════════
+   CROSS-PANEL HELPERS
+══════════════════════════════════════ */
+function sendToSummarize(abstract){
+  document.getElementById('summarize-text').value = abstract;
+  showPanel('pdf');
+  setTimeout(()=>document.getElementById('summarize-text').scrollIntoView({behavior:'smooth'}),100);
 }
-function downloadText(id, name) {
-  const a = document.createElement("a");
-  a.href = "data:text/plain;charset=utf-8,"+encodeURIComponent(document.getElementById(id).innerText);
-  a.download = name+".txt"; a.click();
+function sendToChat(title,abstract){
+  document.getElementById('chat-input').value = `Paper: ${title}\n\nAbstract: ${abstract}\n\nPlease give me an overview of this paper.`;
+  showPanel('chat');
 }
-function downloadBibtex(title,authors,year) {
-  const key = (authors.split(",")[0]||"Author").trim().replace(/\s/g,"")+year;
-  const bib = "@article{"+key+",\n  title={"+title+"},\n  author={"+authors+"},\n  year={"+year+"}\n}";
-  const a = document.createElement("a");
-  a.href = "data:text/plain;charset=utf-8,"+encodeURIComponent(bib);
-  a.download = "citation.bib"; a.click();
+function sendToPlag(text){
+  document.getElementById('plag-text').value = text;
+  showPanel('plagiarism');
 }
+
+// Init
+showPanel('search');
 </script>
 </body>
 </html>
