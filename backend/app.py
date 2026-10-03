@@ -168,62 +168,99 @@ def fetch_arxiv(query, limit=6):
     import urllib.parse
     import xml.etree.ElementTree as ET
 
-    query_encoded = urllib.parse.quote(query)
-    url = (f"https://export.arxiv.org/api/query"
-           f"?search_query=all:{query_encoded}"
-           f"&start=0&max_results={limit}&sortBy=relevance")
-    r    = requests.get(url, timeout=20)
-    root = ET.fromstring(r.content)
-    ns   = {"atom": "http://www.w3.org/2005/Atom"}
+    if not query or not str(query).strip():
+        return []
 
-    papers = []
-    for entry in root.findall("atom:entry", ns):
-        title       = entry.find("atom:title",    ns)
-        abstract    = entry.find("atom:summary",  ns)
-        year_raw    = entry.find("atom:published",ns)
-        authors     = entry.findall("atom:author",ns)
-        entry_id    = entry.find("atom:id",       ns)
-        journal_ref = entry.find("{http://arxiv.org/schemas/atom}journal_ref", ns)
-        doi         = entry.find("{http://arxiv.org/schemas/atom}doi", ns)
+    # 1. Sanitize search query:
+    # Remove problematic special characters, quotes, math symbols, and arXiv operators (AND, OR, NOT)
+    raw_str = str(query).strip()
+    
+    # Remove arXiv boolean operators as standalone words
+    raw_str = re.sub(r'\b(?:AND|OR|NOT)\b', ' ', raw_str, flags=re.IGNORECASE)
+    
+    # Keep only clean alphanumeric words and hyphens/underscores/spaces, removing punctuation & special query syntax
+    words = re.findall(r'\b[A-Za-z0-9\-_]+\b', raw_str)
+    
+    # Filter out single-letter words if needed, keeping useful terms
+    sanitized_words = [w for w in words if len(w) > 1 or w.isalnum()]
+    sanitized_query = " ".join(sanitized_words[:25]).strip()
+    
+    if not sanitized_query:
+        return []
 
-        author_names = []
-        for a in authors[:4]:
-            name = a.find("atom:name", ns)
-            if name is not None:
-                author_names.append(name.text)
+    try:
+        query_encoded = urllib.parse.quote(sanitized_query)
+        url = (f"https://export.arxiv.org/api/query"
+               f"?search_query=all:{query_encoded}"
+               f"&start=0&max_results={limit}&sortBy=relevance")
+        
+        r = requests.get(url, timeout=20)
+        
+        # 2. Check HTTP Response status code
+        if r.status_code != 200:
+            print(f"arXiv API returned HTTP status {r.status_code} for query: {sanitized_query[:50]}")
+            return []
+            
+        # 3. Safely parse XML
+        try:
+            root = ET.fromstring(r.content)
+        except ET.ParseError as pe:
+            print(f"arXiv API XML ParseError for query: {sanitized_query[:50]} -> {pe}")
+            return []
 
-        arxiv_id = ""
-        pdf_url  = ""
-        if entry_id is not None:
-            raw_id   = entry_id.text.strip()
-            arxiv_id = raw_id.split("/abs/")[-1] if "/abs/" in raw_id else ""
-            if arxiv_id:
-                pdf_url = f"https://arxiv.org/pdf/{arxiv_id}"
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        papers = []
+        for entry in root.findall("atom:entry", ns):
+            title       = entry.find("atom:title",    ns)
+            abstract    = entry.find("atom:summary",  ns)
+            year_raw    = entry.find("atom:published",ns)
+            authors     = entry.findall("atom:author",ns)
+            entry_id    = entry.find("atom:id",       ns)
+            journal_ref = entry.find("{http://arxiv.org/schemas/atom}journal_ref", ns)
+            doi         = entry.find("{http://arxiv.org/schemas/atom}doi", ns)
 
-        if journal_ref is not None and journal_ref.text:
-            status       = "published"
-            status_label = f"Published — {journal_ref.text[:60]}"
-        elif doi is not None and doi.text:
-            status       = "published"
-            status_label = f"Published (DOI: {doi.text})"
-        else:
-            status       = "preprint"
-            status_label = "Preprint — Not peer reviewed"
+            author_names = []
+            for a in authors[:4]:
+                name = a.find("atom:name", ns)
+                if name is not None:
+                    author_names.append(name.text)
 
-        papers.append({
-            "title":        title.text.strip().replace("\n"," ") if title    is not None else "Untitled",
-            "authors":      ", ".join(author_names),
-            "year":         year_raw.text[:4]                    if year_raw is not None else "N/A",
-            "venue":        "arXiv",
-            "abstract":     abstract.text.strip().replace("\n"," ") if abstract is not None else "No abstract.",
-            "citations":    0,
-            "arxiv_id":     arxiv_id,
-            "pdf_url":      pdf_url,
-            "status":       status,
-            "status_label": status_label,
-            "doi":          doi.text if doi is not None else "",
-        })
-    return papers
+            arxiv_id = ""
+            pdf_url  = ""
+            if entry_id is not None:
+                raw_id   = entry_id.text.strip()
+                arxiv_id = raw_id.split("/abs/")[-1] if "/abs/" in raw_id else ""
+                if arxiv_id:
+                    pdf_url = f"https://arxiv.org/pdf/{arxiv_id}"
+
+            if journal_ref is not None and journal_ref.text:
+                status       = "published"
+                status_label = f"Published — {journal_ref.text[:60]}"
+            elif doi is not None and doi.text:
+                status       = "published"
+                status_label = f"Published (DOI: {doi.text})"
+            else:
+                status       = "preprint"
+                status_label = "Preprint — Not peer reviewed"
+
+            papers.append({
+                "title":        title.text.strip().replace("\n"," ") if title    is not None else "Untitled",
+                "authors":      ", ".join(author_names),
+                "year":         year_raw.text[:4]                    if year_raw is not None else "N/A",
+                "venue":        "arXiv",
+                "abstract":     abstract.text.strip().replace("\n"," ") if abstract is not None else "No abstract.",
+                "citations":    0,
+                "arxiv_id":     arxiv_id,
+                "pdf_url":      pdf_url,
+                "status":       status,
+                "status_label": status_label,
+                "doi":          doi.text if doi is not None else "",
+            })
+        return papers
+
+    except Exception as e:
+        print(f"fetch_arxiv exception: {e}")
+        return []
 
 # ─────────────────────────────────────────
 #  Helper — N-gram overlap (Jaccard)
