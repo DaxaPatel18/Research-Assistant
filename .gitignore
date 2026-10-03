@@ -1,4 +1,14 @@
 .env
+.venv/
+venv/
 __pycache__/
 *.pyc
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
 backend/uploads/
+.DS_Store
+Thumbs.db
