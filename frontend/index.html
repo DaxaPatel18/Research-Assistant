@@ -1033,13 +1033,48 @@ function loading(id, msg){
     `<div class="loading-state"><div class="spinner"></div><div class="loading-text">${msg}</div></div>`;
 }
 function error(id, msg){
-  document.getElementById(id).innerHTML =
-    `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Something went wrong</div><div class="error-state-desc">${msg}</div></div></div>`;
+  const cleanMsg = typeof msg === 'string' ? msg : ((msg && msg.message) || 'An unexpected error occurred. Please try again.');
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.innerHTML =
+    `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Something went wrong</div><div class="error-state-desc">${escapeHtml(cleanMsg)}</div></div></div>`;
+}
+function extractErrorMessage(data, res, fallback){
+  let detailMsg = '';
+  if(data){
+    if(typeof data === 'string' && data.trim()) detailMsg = data.trim();
+    else if(typeof data.error === 'string' && data.error.trim()) detailMsg = data.error.trim();
+    else if(typeof data.detail === 'string' && data.detail.trim()) detailMsg = data.detail.trim();
+    else if(Array.isArray(data.detail) && data.detail.length && data.detail[0]){
+      const d0 = data.detail[0];
+      detailMsg = typeof d0 === 'string' ? d0 : (d0.msg || JSON.stringify(d0));
+    }else if(typeof data.message === 'string' && data.message.trim()) detailMsg = data.message.trim();
+  }
+  if(detailMsg) return detailMsg;
+  if(res && res.statusText) return `Request failed (${res.status}: ${res.statusText})`;
+  if(res && res.status) return `Request failed with status ${res.status}`;
+  return fallback || 'Request failed. Please try again.';
 }
 async function post(ep, body){
-  const r = await fetch(API+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok) throw new Error('Server error '+r.status);
-  return r.json();
+  let r;
+  try{
+    r = await fetch(API+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  }catch(netErr){
+    throw new Error('Unable to reach the server. Please check your internet connection and try again.');
+  }
+  let data = null;
+  try{
+    data = await r.json();
+  }catch(_){
+    try{
+      const txt = await r.text();
+      if(txt && txt.length < 200) data = txt;
+    }catch(__){}
+  }
+  if(!r.ok){
+    throw new Error(extractErrorMessage(data, r));
+  }
+  return data;
 }
 function copyText(text){ navigator.clipboard.writeText(text).then(()=>alert('Copied!')); }
 function downloadTxt(text, filename){
@@ -1244,7 +1279,7 @@ async function doSearch(){
       </div>`;
     });
     document.getElementById('search-results').innerHTML = html;
-  }catch(e){error('search-results','Unable to connect to backend. Make sure the server is running on port 8000.');}
+  }catch(e){error('search-results', (e && e.message) || 'Search failed. Please try again.');}
 }
 
 /* ══════════════════════════════════════
@@ -1269,9 +1304,25 @@ async function uploadPDF(file, isPlag){
   else loading('pdf-upload-loading','Analyzing PDF — this may take 15–20 seconds...');
   try{
     const fd = new FormData(); fd.append('file',file);
-    const res = await fetch(API+ep,{method:'POST',body:fd});
-    const data = await res.json();
-    if(data.error){error(outId,data.error);return;}
+    let res;
+    try{
+      res = await fetch(API+ep,{method:'POST',body:fd});
+    }catch(netErr){
+      throw new Error('Unable to reach the server. Please check your internet connection and try again.');
+    }
+    let data = null;
+    try{
+      data = await res.json();
+    }catch(_){
+      try{
+        const txt = await res.text();
+        if(txt && txt.length < 200) data = txt;
+      }catch(__){}
+    }
+    if(!res.ok){
+      throw new Error(extractErrorMessage(data, res, 'Upload failed. Please try again.'));
+    }
+    if(data && data.error){error(outId,data.error);return;}
     if(isPlag){
       document.getElementById('plag-text').value = data.text||'';
       document.getElementById('plag-pdf-status').innerHTML =
@@ -1280,7 +1331,7 @@ async function uploadPDF(file, isPlag){
       document.getElementById('pdf-upload-loading').innerHTML = '';
       renderPDFResult(data);
     }
-  }catch(e){error(outId,'Upload failed. Check server connection.');}
+  }catch(e){error(outId, (e && e.message) || 'Upload failed. Please try again.');}
   finally{
     // Allow re-selecting the same file later (browsers won't fire onchange
     // again for an identical path unless the input value is cleared first).
@@ -1365,12 +1416,13 @@ async function doSummarize(){
   loading('summary-output','Generating summary...');
   try{
     const data = await post('/summarize',{query:text,style:style});
+    if(data && data.error){error('summary-output',data.error);return;}
     document.getElementById('summary-output').innerHTML =
       `<div class="card card-pad">${renderAIResponse(data.summary||'')}</div>
        <div class="flex gap-8 mt-12">
          <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('summary-output').innerText)">Copy</button>
        </div>`;
-  }catch(e){error('summary-output','Summarization failed. Check server.');}
+  }catch(e){error('summary-output', (e && e.message) || 'Summarization failed. Please try again.');}
 }
 
 /* ══════════════════════════════════════
@@ -1386,9 +1438,9 @@ async function doLitReview(){
   document.getElementById('lit-outline-card').style.display='none';
   try{
     const data = await post('/literature-review',{query:topic});
-    if(data.error){
+    if(data && data.error){
       document.getElementById('lit-center').innerHTML =
-        `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Generation Failed</div><div class="error-state-desc">${data.error}</div></div></div>`;
+        `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Generation Failed</div><div class="error-state-desc">${escapeHtml(data.error)}</div></div></div>`;
       return;
     }
     // Center — review
@@ -1426,8 +1478,9 @@ async function doLitReview(){
     ).join('');
 
   }catch(e){
+    const msg = (e && e.message) || 'Literature review generation failed. Please try again.';
     document.getElementById('lit-center').innerHTML =
-      `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Connection Error</div><div class="error-state-desc">Unable to connect to backend.</div></div></div>`;
+      `<div class="error-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div class="error-state-title">Generation Failed</div><div class="error-state-desc">${escapeHtml(msg)}</div></div></div>`;
   }
 }
 
@@ -1505,7 +1558,7 @@ async function doPlagiarism(){
       html += `<div class="card card-pad"><div class="section-heading">AI Analysis</div><div class="mt-8">${renderAIResponse(data.analysis)}</div></div>`;
     }
     document.getElementById('plag-output').innerHTML = html;
-  }catch(e){error('plag-output','Plagiarism check failed. Check server connection.');}
+  }catch(e){error('plag-output', (e && e.message) || 'Plagiarism check failed. Please try again.');}
 }
 
 
@@ -1574,7 +1627,7 @@ async function doHumanize(){
     <div class="callout callout-blue mt-16" style="font-size:13px">${escapeHtml(data.tip||'Paraphrased using a pretrained Transformer sequence-to-sequence model.')}</div>
     ${data.note?`<div class="callout callout-gray mt-8" style="font-size:12px">${escapeHtml(data.note)}</div>`:''}`;
     document.getElementById('humanize-output').innerHTML = html;
-  }catch(e){error('humanize-output','Humanization pipeline execution failed. Check server connection.');}
+  }catch(e){error('humanize-output', (e && e.message) || 'Humanization failed. Please try again.');}
 }
 function checkPlagiarism(){
   document.getElementById('plag-text').value = document.getElementById('humanized-result').innerText;
@@ -1619,12 +1672,27 @@ Question: ${displayMsg}`;
   cont.scrollTop = cont.scrollHeight;
   try{
     const data = await post('/chat',{message:sendMsg,history:chatHist.slice(0,-1).slice(-6)});
+    const el = document.getElementById('ai-typing');
+    if(data && data.error){
+      if(el){
+        el.innerHTML = `<span style="color:var(--danger)">${escapeHtml(data.error)}</span>`;
+        el.id='';
+      }
+      return;
+    }
     const reply= data.reply||'No response.';
     chatHist.push({role:'assistant',content:reply});
-    document.getElementById('ai-typing').innerHTML = renderAIResponse(reply);
-    document.getElementById('ai-typing').id='';
+    if(el){
+      el.innerHTML = renderAIResponse(reply);
+      el.id='';
+    }
   }catch(e){
-    document.getElementById('ai-typing').innerHTML='<span style="color:var(--danger)">Connection failed. Check backend server.</span>';
+    const msg = (e && e.message) || 'Failed to get a response. Please try again.';
+    const el = document.getElementById('ai-typing');
+    if(el){
+      el.innerHTML = `<span style="color:var(--danger)">${escapeHtml(msg)}</span>`;
+      el.id='';
+    }
   }
   cont.scrollTop = cont.scrollHeight;
 }
@@ -1645,6 +1713,7 @@ async function doCite(){
   const details = `Title: ${title}\nAuthors: ${authors}\nYear: ${year}\nJournal/Conference: ${journal}${volume?'\nVolume: '+volume:''}${pages?'\nPages: '+pages:''}`;
   try{
     const data = await post('/cite',{query:details,style:style});
+    if(data && data.error){error('cite-output',data.error);return;}
     document.getElementById('cite-output').innerHTML =
       `<div style="margin-bottom:12px"><span class="badge badge-blue">${style}</span></div>
        <div class="cite-result" id="cite-text">${data.citation}</div>
@@ -1652,7 +1721,7 @@ async function doCite(){
          <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('cite-text').innerText)">Copy Citation</button>
          <button class="btn btn-secondary btn-sm" onclick="downloadBibtex('${title.replace(/'/g,"\\'")}','${authors.replace(/'/g,"\\'")}','${year}')">↓ BibTeX</button>
        </div>`;
-  }catch(e){error('cite-output','Citation generation failed.');}
+  }catch(e){error('cite-output', (e && e.message) || 'Citation generation failed. Please try again.');}
 }
 function downloadBibtex(title,authors,year){
   const key = (authors.split(',')[0]||'Author').trim().replace(/\s/g,'')+year;
