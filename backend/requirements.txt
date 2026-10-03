@@ -3,10 +3,7 @@ uvicorn
 groq
 python-dotenv
 requests
-sentence-transformers
-torch
-transformers
+scikit-learn
+numpy
 pymupdf
-sentencepiece
-protobuf
 python-multipart

@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -25,7 +25,6 @@ except OSError:
     pass  # /tmp may not exist in some local dev environments
 FRONTEND_FILE = pathlib.Path(__file__).resolve().parent.parent / "frontend" / "index.html"
 
-semantic_model = None
 
 ARXIV_CACHE_TTL = 300
 ARXIV_FAILURE_CACHE_TTL = 300
@@ -124,18 +123,27 @@ def strip_ai_phrases(text: str) -> str:
     result = re.sub(r'^\s*[,.;:]\s*', '', result, flags=re.MULTILINE)
     return result.strip()
 
+def _tfidf_cosine(text_a: str, text_b: str) -> float:
+    """Return cosine similarity [0, 1] between two texts using TF-IDF."""
+    try:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity as sk_cosine
+        import numpy as np
+        vec = TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, min_df=1)
+        tfidf = vec.fit_transform([text_a, text_b])
+        score = sk_cosine(tfidf[0], tfidf[1])[0][0]
+        return float(np.clip(score, 0.0, 1.0))
+    except Exception:
+        return 0.0
+
 def semantic_similarity_pct(text_a: str, text_b: str):
     """
-    Uses the existing all-MiniLM-L6-v2 model to report how much of the
-    original meaning was preserved after rewriting. Returns None if the
-    NLP model can't be loaded, so callers must handle that gracefully.
+    Lightweight TF-IDF cosine similarity used to report meaning preservation
+    after rewriting. Returns None on failure so callers handle it gracefully.
     """
     try:
-        from sentence_transformers import util
-        model = get_semantic_model()
-        emb = model.encode([text_a, text_b], convert_to_tensor=True)
-        score = util.cos_sim(emb[0], emb[1]).item()
-        return round(max(0.0, min(1.0, score)) * 100, 1)
+        score = _tfidf_cosine(text_a, text_b)
+        return round(score * 100, 1)
     except Exception:
         return None
 
@@ -172,17 +180,6 @@ def ask_groq(system_prompt, user_prompt, max_tokens=1024):
     )
     return response.choices[0].message.content
 
-# ─────────────────────────────────────────
-#  Helper — Load NLP Model
-# ─────────────────────────────────────────
-def get_semantic_model():
-    global semantic_model
-    if semantic_model is None:
-        print("Loading NLP model...")
-        from sentence_transformers import SentenceTransformer
-        semantic_model = SentenceTransformer("all-MiniLM-L6-v2")
-        print("NLP model ready!")
-    return semantic_model
 
 # ─────────────────────────────────────────
 #  Helper — Fetch from arXiv
@@ -369,37 +366,29 @@ def ngram_overlap(text1, text2, n=4):
     return round(len(intersection) / len(ngrams1) * 100, 1)
 
 # ─────────────────────────────────────────
-#  Helper — Sentence level similarity
+#  Helper — Sentence level similarity (TF-IDF)
 # ─────────────────────────────────────────
 def sentence_similarity(text1, text2):
     """
-    Splits text into sentences and checks each sentence
-    against the paper abstract for similarity.
-    Returns max similarity found and flagged sentences.
+    Splits text1 into sentences and checks each sentence against text2
+    using TF-IDF cosine similarity. Returns max similarity and flagged sentences.
     """
     try:
-        from sentence_transformers import SentenceTransformer, util
-        model = get_semantic_model()
-
         sentences1 = [s.strip() for s in re.split(r'[.!?]+', text1) if len(s.strip()) > 20]
         if not sentences1:
             return 0.0, []
 
-        # Encode all sentences and target text
-        emb1 = model.encode(sentences1, convert_to_tensor=True)
-        emb2 = model.encode([text2],    convert_to_tensor=True)
-
-        scores = util.cos_sim(emb1, emb2)[:,0].tolist()
+        scores = [_tfidf_cosine(sent, text2) for sent in sentences1]
 
         flagged = []
         for sent, score in zip(sentences1, scores):
-            if score > 0.75:  # high similarity threshold
+            if score > 0.55:  # adjusted threshold for TF-IDF (lower than embedding threshold)
                 flagged.append({
                     "sentence":   sent,
                     "similarity": round(score * 100, 1)
                 })
 
-        max_score = max(scores) * 100 if scores else 0
+        max_score = max(scores) * 100 if scores else 0.0
         return round(max_score, 1), flagged
 
     except Exception:
@@ -429,27 +418,36 @@ def health():
 @app.post("/semantic-search")
 def semantic_search(req: SemanticSearchRequest):
     try:
-        from sentence_transformers import util
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity as sk_cosine
 
         papers = fetch_arxiv(req.query, limit=20)
         if not papers:
             return {"papers": [], "error": "Could not fetch papers from arXiv"}
 
-        model            = get_semantic_model()
-        query_embedding  = model.encode(req.query, convert_to_tensor=True)
-        combined_texts   = [p.get("title","")+" "+p.get("abstract","") for p in papers]
-        paper_embeddings = model.encode(combined_texts, convert_to_tensor=True)
-        scores           = util.cos_sim(query_embedding, paper_embeddings)[0].tolist()
-        ranked           = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
+        combined_texts = [
+            p.get("title", "") + " " + p.get("abstract", "")
+            for p in papers
+        ]
+
+        # Fit TF-IDF on query + all paper texts together so IDF is shared
+        corpus = [req.query] + combined_texts
+        vec = TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, min_df=1)
+        tfidf = vec.fit_transform(corpus)
+
+        query_vec  = tfidf[0]          # first row = query
+        paper_vecs = tfidf[1:]         # remaining rows = papers
+        scores = sk_cosine(query_vec, paper_vecs)[0].tolist()
+        ranked = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
 
         results = []
         for idx, score in ranked[:6]:
             paper = papers[idx].copy()
             paper["similarity_score"] = round(score * 100, 1)
             paper["match_level"] = (
-                "Excellent Match" if score > 0.7 else
-                "Good Match"      if score > 0.5 else
-                "Partial Match"   if score > 0.3 else
+                "Excellent Match" if score > 0.25 else
+                "Good Match"      if score > 0.15 else
+                "Partial Match"   if score > 0.07 else
                 "Weak Match"
             )
             results.append(paper)
@@ -457,7 +455,7 @@ def semantic_search(req: SemanticSearchRequest):
         return {"papers": results, "count": len(results), "total_fetched": len(papers)}
 
     except ImportError:
-        return {"papers": [], "error": "Run: pip install sentence-transformers torch"}
+        return {"papers": [], "error": "Run: pip install scikit-learn"}
     except Exception as e:
         return {"papers": [], "error": str(e)}
 
@@ -778,7 +776,7 @@ def humanize(req: TextAnalysisRequest):
         # Conservative final cleanup: remove flagged AI phrases
         humanized = strip_ai_phrases(raw_humanized)
 
-        # Semantic similarity check via all-MiniLM-L6-v2 (unchanged)
+        # Meaning preservation check via TF-IDF cosine similarity
         meaning_similarity = semantic_similarity_pct(text, humanized)
 
         sentences_changed = sentences_processed  # Groq rewrites the full text
@@ -786,7 +784,7 @@ def humanize(req: TextAnalysisRequest):
 
         changes_made = [
             "Rewrote text using Groq LLM neural rephrasing",
-            "Evaluated meaning preservation with MiniLM semantic similarity",
+            "Evaluated meaning preservation with TF-IDF cosine similarity",
             "Applied conservative AI phrase cleanup",
             f"Style applied: {style.title()}",
         ]
@@ -807,9 +805,9 @@ def humanize(req: TextAnalysisRequest):
             "protected_items_found": 0,
             "protected_items_preserved": 0,
             "unchanged_candidates": 0,
-            "pipeline": "Groq LLM Rewrite + all-MiniLM-L6-v2 Semantic Scoring",
+            "pipeline": "Groq LLM Rewrite + TF-IDF Semantic Scoring",
             "fallback_used": False,
-            "tip": "Rewritten using Groq LLM and evaluated for semantic preservation with MiniLM.",
+            "tip": "Rewritten using Groq LLM and evaluated for meaning preservation with TF-IDF cosine similarity.",
             "note": "This tool focuses on meaning-preserving paraphrasing and writing quality improvement. It is an ML academic utility and does not guarantee bypassing AI detection systems."
         }
 
