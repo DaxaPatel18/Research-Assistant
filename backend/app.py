@@ -23,6 +23,100 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 semantic_model = None
 
 # ─────────────────────────────────────────
+#  Shared list of phrases associated with AI-generated writing.
+#  IMPORTANT: /detect-ai and /humanize both use this exact same list.
+#  Previously /detect-ai flagged ~22 phrases but /humanize's prompt only
+#  instructed the model to remove ~10 of them — any of the other ~12 left
+#  in the text kept the detection penalty active even after "humanizing",
+#  which is a major reason the AI score barely moved (and occasionally
+#  the reworded text introduced one of the untargeted phrases, e.g.
+#  "certainly"/"absolutely", making the score go UP). Keeping one shared
+#  list guarantees the humanizer targets exactly what the detector checks.
+# ─────────────────────────────────────────
+AI_FLAG_PHRASES = [
+    "in conclusion", "it is worth noting", "furthermore",
+    "it is important to", "in summary", "to summarize",
+    "in the realm of", "delve into", "it's worth noting",
+    "as an ai", "certainly", "absolutely", "of course",
+    "in today's world", "it is crucial", "plays a crucial role",
+    "a testament to", "in the ever-evolving", "it is essential",
+    "needless to say", "as previously mentioned", "it goes without saying"
+]
+
+# Meaning-preserving, non-flagged replacements for each phrase above.
+# None of these replacement words/phrases appear in AI_FLAG_PHRASES themselves,
+# so this pass can never re-introduce a flagged phrase.
+_AI_PHRASE_REPLACEMENTS = {
+    "in conclusion":            "overall",
+    "it is worth noting":       "notably",
+    "furthermore":              "also",
+    "it is important to":       "it helps to",
+    "in summary":               "put simply",
+    "to summarize":             "put simply",
+    "in the realm of":          "in",
+    "delve into":               "look closely at",
+    "it's worth noting":        "notably",
+    "as an ai":                 "",
+    "certainly":                "",
+    "absolutely":               "",
+    "of course":                "",
+    "in today's world":         "today",
+    "it is crucial":            "this matters",
+    "plays a crucial role":     "matters a great deal",
+    "a testament to":           "a sign of",
+    "in the ever-evolving":     "in the changing",
+    "it is essential":          "this is needed",
+    "needless to say":          "",
+    "as previously mentioned":  "as mentioned",
+    "it goes without saying":   "",
+}
+
+def strip_ai_phrases(text: str) -> str:
+    """
+    Deterministic, meaning-preserving cleanup pass. Runs AFTER the Groq
+    rewrite as a guarantee — not a substitute for the prompt-based rewrite,
+    but a safety net so leftover flagged phrases never survive a single
+    /humanize call. Case-insensitive, preserves surrounding punctuation
+    and capitalization at sentence starts, never deletes any sentence.
+    """
+    result = text
+    for phrase in AI_FLAG_PHRASES:
+        replacement = _AI_PHRASE_REPLACEMENTS.get(phrase, "")
+        pattern = re.compile(re.escape(phrase), re.IGNORECASE)
+
+        def _sub(m, repl=replacement):
+            matched = m.group(0)
+            if not repl:
+                return ""
+            # Preserve capitalization if the matched phrase started a sentence
+            if matched[0].isupper():
+                return repl[0].upper() + repl[1:]
+            return repl
+
+        result = pattern.sub(_sub, result)
+
+    # Clean up double spaces / stray punctuation left by removed phrases
+    result = re.sub(r'\s{2,}', ' ', result)
+    result = re.sub(r'\s+([,.;:])', r'\1', result)
+    result = re.sub(r'^\s*[,.;:]\s*', '', result, flags=re.MULTILINE)
+    return result.strip()
+
+def semantic_similarity_pct(text_a: str, text_b: str):
+    """
+    Uses the existing all-MiniLM-L6-v2 model to report how much of the
+    original meaning was preserved after rewriting. Returns None if the
+    NLP model can't be loaded, so callers must handle that gracefully.
+    """
+    try:
+        from sentence_transformers import util
+        model = get_semantic_model()
+        emb = model.encode([text_a, text_b], convert_to_tensor=True)
+        score = util.cos_sim(emb[0], emb[1]).item()
+        return round(max(0.0, min(1.0, score)) * 100, 1)
+    except Exception:
+        return None
+
+# ─────────────────────────────────────────
 #  Request Models
 # ─────────────────────────────────────────
 class QueryRequest(BaseModel):
@@ -503,17 +597,8 @@ def detect_ai(req: TextAnalysisRequest):
         else:
             std_dev = 0
 
-        ai_phrases = [
-            "in conclusion", "it is worth noting", "furthermore",
-            "it is important to", "in summary", "to summarize",
-            "in the realm of", "delve into", "it's worth noting",
-            "as an ai", "certainly", "absolutely", "of course",
-            "in today's world", "it is crucial", "plays a crucial role",
-            "a testament to", "in the ever-evolving", "it is essential",
-            "needless to say", "as previously mentioned", "it goes without saying"
-        ]
         text_lower      = text.lower()
-        ai_phrase_count = sum(1 for phrase in ai_phrases if phrase in text_lower)
+        ai_phrase_count = sum(1 for phrase in AI_FLAG_PHRASES if phrase in text_lower)
 
         ai_analysis = ask_groq(
             "You are an expert AI text detection system. Analyze carefully.",
@@ -578,6 +663,30 @@ HUMAN PATTERNS MISSING:
 # ─────────────────────────────────────────
 @app.post("/humanize")
 def humanize(req: TextAnalysisRequest):
+    """
+    Natural Academic Rewrite.
+
+    Rewrites text so it reads naturally while preserving facts, technical
+    terms, citations, numbers and claims. This is NOT a guaranteed AI-
+    detector bypass — see the disclaimer in the response.
+
+    Fix notes (why the previous version barely moved the AI score, and
+    sometimes made it worse):
+      1. /detect-ai penalizes ~22 specific phrases, but the old prompts
+         only asked the model to avoid ~10 of them. Any of the other ~12
+         left untouched kept the penalty active. Worse, a couple of styles
+         could introduce "certainly"/"absolutely" as natural-sounding
+         filler, which are ALSO on the flagged list — so the score could
+         go up. Fixed by giving every style the exact same full list.
+      2. Sentence-length variety was only a vague bullet point, so the
+         model often produced text that was still fairly uniform. Fixed
+         with concrete numeric guidance.
+      3. There was no deterministic guarantee — a single LLM call is
+         probabilistic and can simply miss instructions. Fixed by adding
+         a rule-based cleanup pass (strip_ai_phrases) that runs after the
+         rewrite and removes any flagged phrase that slipped through,
+         without deleting or altering any factual content.
+    """
     try:
         text  = req.text.strip()
         style = req.style or "academic"
@@ -585,50 +694,61 @@ def humanize(req: TextAnalysisRequest):
         if len(text) < 50:
             return {"error": "Please provide at least 50 characters."}
 
-        # Different prompts for different humanization styles
+        avoid_phrases_list = "\n".join(f'- "{p}"' for p in AI_FLAG_PHRASES)
+
+        shared_rules = f"""
+CRITICAL — do not use ANY of these phrases anywhere in the rewrite (they are
+strong AI-writing signals). If the original text contains one, replace it
+with a natural alternative instead of just deleting it:
+{avoid_phrases_list}
+
+CRITICAL — sentence rhythm: aim for a genuine mix of sentence lengths in
+every paragraph — at least one shorter sentence (roughly 6-12 words) and at
+least one longer sentence (roughly 22-30 words) per paragraph where the
+content allows it. Uniform, evenly-paced sentences are a strong AI signal.
+
+Preserve, exactly and without alteration:
+- All technical terms, named methods, and jargon
+- All citations and references (e.g., [1], (Smith, 2020))
+- All numbers, statistics, percentages and dates
+- All factual claims and the overall meaning
+Do not invent new facts, examples, or claims that were not in the original.
+Do not delete any factual content, only rephrase it.
+"""
+
         style_instructions = {
-            "academic": """You are rewriting AI-generated academic text to sound like
-a genuine human student or researcher wrote it.
-Rules:
-1. Vary sentence lengths — alternate between short punchy sentences and longer ones
-2. Add contractions naturally (don't, it's, we've, they're, isn't, wasn't)
-3. Replace AI transitions: remove "furthermore","moreover","it is worth noting","in conclusion"
-   Replace with: "also","and","but","so","though","still","even so"
-4. Add hedging and personal perspective: "I think","it seems","arguably","perhaps","in my view"
-5. Occasionally start sentences with "And" or "But" — humans do this, AI avoids it
-6. Use simpler words: "utilize"→"use", "demonstrate"→"show", "facilitate"→"help"
-7. Break up long uniform paragraphs
-8. Keep ALL key information, facts, and meaning intact""",
+            "academic": f"""You are an academic editor rewriting text so it reads like it was
+written by a genuine researcher, while keeping a professional, academic tone.
+{shared_rules}
+Additional style guidance:
+- Use contractions sparingly and only where natural for academic prose (don't, it's)
+- Prefer plainer verbs over inflated ones where meaning is unaffected: "utilize"→"use", "demonstrate"→"show", "facilitate"→"help"
+- Occasionally start a sentence with "And" or "But" if it reads naturally
+- Vary paragraph rhythm; avoid restating the same sentence pattern twice in a row""",
 
-            "casual": """You are rewriting AI text to sound like a casual but smart student wrote it.
-Rules:
-1. Use lots of contractions (don't, it's, they're, we've, can't, won't)
-2. Add informal transitions: "basically","in short","the thing is","what's interesting is"
-3. Use shorter sentences — aim for mix of 5-word and 20-word sentences
-4. Add occasional filler that sounds natural: "actually","pretty much","kind of","in a way"
-5. Remove ALL formal AI phrases like "it is imperative","it is worth noting","delve into"
-6. Add personal voice: "I'd argue","honestly","to be fair","from what I can tell"
-7. Keep all the information but make it feel conversational
-8. Occasionally ask rhetorical questions""",
+            "casual": f"""You are rewriting text so it reads like a smart, casual student wrote it.
+{shared_rules}
+Additional style guidance:
+- Use contractions freely (don't, it's, they're, we've, can't, won't)
+- Natural informal connectors are fine: "basically", "the thing is", "what's interesting is"
+- Add a little personal voice where appropriate: "I'd argue", "from what I can tell"
+- Keep it conversational but still factually precise""",
 
-            "natural": """You are rewriting AI text to sound like a naturally thoughtful person wrote it.
-Rules:
-1. Create natural rhythm — some very short sentences. Some longer ones that flow naturally.
-2. Add natural imperfections: occasional parenthetical thoughts (like this one)
-3. Use em dashes for asides — they feel human
-4. Contractions throughout: don't, it's, that's, we're, they've
-5. Remove robotic precision: instead of "there are three key factors" say "a few things stand out"
-6. Add genuine-sounding opinions: "what's surprising here","this is where it gets interesting"
-7. Vary paragraph length — one sentence paragraphs are fine
-8. Keep all facts and core meaning"""
+            "natural": f"""You are rewriting text so it reads like a thoughtful person wrote it naturally.
+{shared_rules}
+Additional style guidance:
+- Use occasional parenthetical asides or em dashes for a natural aside — they feel human
+- Prefer concrete, specific phrasing over generic, uniform phrasing
+- One-sentence paragraphs are fine occasionally
+- Keep the tone genuine rather than performative"""
         }
 
         instruction = style_instructions.get(style, style_instructions["academic"])
 
-        humanized = ask_groq(
+        humanized_raw = ask_groq(
             instruction,
-            f"""Rewrite the following text to sound naturally human-written.
-Do NOT add any explanation or preamble — just output the rewritten text directly.
+            f"""Rewrite the following text following all the rules above.
+Do NOT add any explanation, preamble, or notes — output ONLY the rewritten text.
 
 Original text:
 {text}
@@ -637,25 +757,24 @@ Rewritten version:""",
             max_tokens=2000
         )
 
-        # Detect what changed
-        original_words   = set(text.lower().split())
-        humanized_words  = set(humanized.lower().split())
-        contractions     = ["don't","it's","we've","they're","isn't","wasn't","can't","won't","that's"]
+        # Deterministic safety net: guarantee no flagged phrase survives,
+        # regardless of what the model actually did.
+        humanized = strip_ai_phrases(humanized_raw)
+
+        # ── Report what actually changed ──
+        contractions = ["don't","it's","we've","they're","isn't","wasn't","can't","won't","that's"]
         contractions_added = [c for c in contractions if c in humanized.lower() and c not in text.lower()]
 
-        ai_phrases_removed = []
-        ai_phrases = ["furthermore","moreover","it is worth noting","in conclusion",
-                      "it is important to","in summary","delve into","it is crucial",
-                      "needless to say","it goes without saying"]
-        for phrase in ai_phrases:
-            if phrase in text.lower() and phrase not in humanized.lower():
-                ai_phrases_removed.append(phrase)
+        phrases_removed = [p for p in AI_FLAG_PHRASES
+                            if p in text.lower() and p not in humanized.lower()]
 
         changes_made = []
         if contractions_added:
             changes_made.append(f"Added contractions: {', '.join(contractions_added[:4])}")
-        if ai_phrases_removed:
-            changes_made.append(f"Removed AI phrases: {', '.join(ai_phrases_removed[:4])}")
+        if phrases_removed:
+            shown = phrases_removed[:4]
+            more  = f" (+{len(phrases_removed)-4} more)" if len(phrases_removed) > 4 else ""
+            changes_made.append(f"Removed AI-associated phrasing: {', '.join(shown)}{more}")
 
         orig_sents = [s for s in re.split(r'[.!?]+', text) if s.strip()]
         hum_sents  = [s for s in re.split(r'[.!?]+', humanized) if s.strip()]
@@ -665,18 +784,28 @@ Rewritten version:""",
             orig_var  = sum((l - sum(orig_lens)/len(orig_lens))**2 for l in orig_lens) / len(orig_lens)
             hum_var   = sum((l - sum(hum_lens)/len(hum_lens))**2 for l in hum_lens) / len(hum_lens)
             if hum_var > orig_var:
-                changes_made.append("Increased sentence length variety")
+                changes_made.append("Increased sentence-length variety")
 
         if not changes_made:
-            changes_made.append("Rewrote with more natural flow and human voice")
+            changes_made.append("Rewrote with more natural flow and academic voice")
         changes_made.append(f"Style applied: {style.title()}")
 
+        # Honest meaning-preservation signal using the existing MiniLM model
+        # (not a loop, not a detector bypass — just a diagnostic metric).
+        meaning_similarity = semantic_similarity_pct(text, humanized)
+
         return {
-            "humanized_text":  humanized,
-            "original_words":  len(text.split()),
-            "humanized_words": len(humanized.split()),
-            "changes_made":    changes_made,
-            "tip": "Click 'Test AI Score' to run detection on the humanized text and see your improved score."
+            "humanized_text":     humanized,
+            "original_words":     len(text.split()),
+            "humanized_words":    len(humanized.split()),
+            "changes_made":       changes_made,
+            "meaning_similarity": meaning_similarity,  # 0-100, or null if unavailable
+            "tip": "This is a natural academic rewrite, not a guaranteed AI-detector bypass. "
+                   "You can re-run AI Detection on the result to see how it scores, but "
+                   "detection scores vary between systems and are not definitive proof of authorship.",
+            "note": "AI-detection tools (including the one in this app) are probabilistic and "
+                    "can disagree with each other or with themselves on repeated runs. Treat "
+                    "any AI score as a rough signal, not evidence of who wrote a text."
         }
 
     except Exception as e:
