@@ -12,7 +12,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 print("Groq Key Loaded:", repr(GROQ_API_KEY[:15]) if GROQ_API_KEY else "NOT FOUND")
 
 client     = Groq(api_key=GROQ_API_KEY)
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-120b"
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
