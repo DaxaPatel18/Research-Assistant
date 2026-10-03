@@ -317,17 +317,7 @@ select.input{cursor:pointer}
 .smf-medium{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
 .smf-high{background:linear-gradient(90deg,#EF4444,#F87171)}
 
-/* gradient meter for AI detection */
-.ai-meter-track{
-  height:12px;border-radius:20px;
-  background:linear-gradient(90deg,#10B981 0%,#F59E0B 50%,#EF4444 100%);
-  position:relative;margin:10px 0;
-}
-.ai-meter-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-4)}
-.ai-meter-thumb{
-  position:absolute;top:50%;width:3px;height:20px;background:var(--text-1);
-  border-radius:2px;transform:translate(-50%,-50%);transition:left 1.2s ease;
-}
+
 
 /* ══════════════════════════════════════════════
    UPLOAD ZONE
@@ -502,38 +492,7 @@ select.input{cursor:pointer}
 .risk-medium{background:var(--warn-lt);color:#92400E}
 .risk-low{background:var(--success-lt);color:#065F46}
 
-/* ══════════════════════════════════════════════
-   AI DETECTION
-══════════════════════════════════════════════ */
-.ai-det-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.stat-list-item{
-  display:flex;align-items:center;gap:12px;
-  padding:12px 0;border-bottom:1px solid var(--border);
-}
-.stat-list-item:last-child{border-bottom:none}
-.stat-list-icon{
-  width:32px;height:32px;border-radius:7px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.stat-list-icon svg{width:15px;height:15px}
-.stat-list-label{flex:1;font-size:13px;color:var(--text-2);font-weight:500}
-.stat-list-value{font-size:14px;font-weight:700;color:var(--text-1)}
-.detail-analysis-card{
-  display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:0;
-}
-.detail-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:var(--radius);padding:16px 14px;text-align:center;
-  box-shadow:var(--shadow-sm);
-}
-.detail-card-icon{
-  width:40px;height:40px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;margin:0 auto 10px;
-}
-.detail-card-icon svg{width:20px;height:20px}
-.detail-card-num{font-size:20px;font-weight:800;letter-spacing:-0.5px}
-.detail-card-label{font-size:11px;color:var(--text-3);font-weight:500;margin-top:4px}
-.detail-card-desc{font-size:11px;color:var(--text-4);line-height:1.4;margin-top:6px}
+
 
 /* ══════════════════════════════════════════════
    HUMANIZER
@@ -704,13 +663,7 @@ select.input{cursor:pointer}
         <span class="sb-item-label">Plagiarism Checker</span>
         <span class="sb-badge red">NEW</span>
       </button>
-      <button class="sb-item" onclick="showPanel('aidetect')" id="nav-aidetect">
-        <div class="sb-item-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        </div>
-        <span class="sb-item-label">AI Detection</span>
-        <span class="sb-badge red">NEW</span>
-      </button>
+      
       <button class="sb-item" onclick="showPanel('humanize')" id="nav-humanize">
         <div class="sb-item-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -913,47 +866,23 @@ select.input{cursor:pointer}
       <div id="plag-output"></div>
     </div>
 
-    <!-- ══════════════════════════
-         AI DETECTION
-    ══════════════════════════ -->
-    <div class="panel" id="panel-aidetect">
-      <div id="aidet-input-area" class="card card-pad">
-        <div class="section-heading">Input Text</div>
-        <textarea class="input mt-8" id="aidet-text" style="min-height:180px" placeholder="Paste text here to check if it was AI-generated...&#10;Minimum 100 characters for accurate analysis."></textarea>
-        <div class="flex gap-8 mt-12">
-          <button class="btn btn-warn" onclick="doAIDetect()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Detect AI Content
-          </button>
-          <button class="btn btn-secondary" id="to-humanize-btn" style="display:none" onclick="sendToHumanize()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Send to Humanizer
-          </button>
-        </div>
-      </div>
-      <div id="aidet-output"></div>
-    </div>
-
-    <!-- ══════════════════════════
-         HUMANIZER
-    ══════════════════════════ -->
     <div class="panel" id="panel-humanize">
       <div class="callout callout-gray flex gap-12 items-start">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        <span><b>Natural Academic Rewrite</b> — rewrites text to read more naturally while preserving facts, technical terms, citations and numbers. This is a writing-quality tool, not a guaranteed AI-detector bypass — detection scores vary between systems and are not proof of authorship.</span>
+        <span><b>Transformer Paraphrasing & Humanizer</b> — Powered by a pretrained <b>Pegasus seq2seq</b> model and <b>all-MiniLM-L6-v2</b> semantic embeddings. Generates candidates, evaluates semantic similarity (70% weight), and preserves technical accuracy.</span>
       </div>
       <div class="card card-pad">
-        <div class="section-heading">AI-Generated Text</div>
-        <textarea class="input mt-8" id="humanize-text" style="min-height:160px" placeholder="Paste AI-generated text here to rewrite it in a natural human style..."></textarea>
+        <div class="section-heading">Input Text to Paraphrase</div>
+        <textarea class="input mt-8" id="humanize-text" style="min-height:160px" placeholder="Paste your draft or research text here to rephrase naturally while preserving meaning..."></textarea>
         <div class="flex gap-12 mt-12">
           <select class="input" id="humanize-style" style="max-width:220px">
-            <option value="academic">Academic Human Style</option>
+            <option value="academic">Academic Style</option>
             <option value="casual">Casual Student Style</option>
             <option value="natural">Conversational Natural</option>
           </select>
           <button class="btn btn-warn" onclick="doHumanize()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Humanize Text
+            Run Humanizer Pipeline
           </button>
         </div>
       </div>
@@ -1054,8 +983,7 @@ const PANELS = {
   pdf:        {title:"PDF Analysis & Summarization",     desc:"Upload a research paper PDF to analyze and summarize its content",  badge:"AI Summarization"},
   litreview:  {title:"Literature Review Generator",      desc:"Generate a structured literature review on any research topic",    badge:"AI Academic Writing"},
   plagiarism: {title:"Plagiarism Checker",               desc:"Check text for plagiarism using semantic and lexical similarity",   badge:"Research Integrity"},
-  aidetect:   {title:"AI-Generated Text Detection",      desc:"Detect the likelihood of AI-generated text using advanced analysis",badge:"Multi-Signal Analysis"},
-  humanize:   {title:"Humanizer",                        desc:"Rewrite text to sound natural while preserving meaning",            badge:"Text Rewriting"},
+    humanize:   {title:"Humanizer & Paraphraser",          desc:"Rewrite text using Pegasus seq2seq transformer and MiniLM semantic evaluation", badge:"Pegasus NLP Pipeline"},
   chat:       {title:"Ask AI",                           desc:"Your academic research assistant powered by Llama 3.3 70B",        badge:"Groq AI"},
   cite:       {title:"Citation Generator",               desc:"Generate properly formatted academic citations",                   badge:"5 Citation Styles"},
 };
@@ -1072,7 +1000,7 @@ function showPanel(name){
   document.getElementById('topbar-right').innerHTML =
     `<span class="topbar-badge">${m.badge}</span>`;
   // download button for relevant panels
-  if(['litreview','plagiarism','aidetect'].includes(name)){
+  if(['litreview','plagiarism','humanize'].includes(name)){
     document.getElementById('topbar-right').innerHTML +=
       ` <button class="topbar-action-btn" onclick="downloadReport('${name}')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1104,7 +1032,7 @@ function downloadTxt(text, filename){
   a.download = filename+'.txt'; a.click();
 }
 function downloadReport(panel){
-  const els = {litreview:'lit-review-text', plagiarism:'plag-report-text', aidetect:'aidet-report-text'};
+  const els = {litreview:'lit-review-text', plagiarism:'plag-report-text', humanize:'humanized-result'};
   const el = document.getElementById(els[panel]);
   if(el) downloadTxt(el.innerText, panel+'-report');
   else alert('Generate a report first.');
@@ -1445,7 +1373,7 @@ async function doLitReview(){
 ══════════════════════════════════════ */
 async function doPlagiarism(){
   const text = document.getElementById('plag-text').value.trim();
-  if(!text||text.length<50){alert('Please enter at least 50 characters.');return;}
+  if(!text||text.length<20){alert('Please enter at least 20 characters.');return;}
   loading('plag-output','Running phrase matching and sentence similarity analysis — 20–40 seconds...');
   try{
     const data = await post('/check-plagiarism',{text:text});
@@ -1517,131 +1445,7 @@ async function doPlagiarism(){
   }catch(e){error('plag-output','Plagiarism check failed. Check server connection.');}
 }
 
-/* ══════════════════════════════════════
-   6. AI DETECTION
-══════════════════════════════════════ */
-async function doAIDetect(){
-  const text = document.getElementById('aidet-text').value.trim();
-  if(!text||text.length<100){alert('Please enter at least 100 characters.');return;}
-  loading('aidet-output','Analyzing AI signals — word patterns, sentence structure, phrase analysis...');
-  try{
-    const data = await post('/detect-ai',{text:text});
-    if(data.error){error('aidet-output',data.error);return;}
-    const score  = data.ai_score||0;
-    const stats  = data.stats||{};
-    const verdict= data.verdict||'Unknown';
-    const rClass = score>65?'sc-red':score>40?'sc-orange':'sc-green';
-    if(score>40) document.getElementById('to-humanize-btn').style.display='inline-flex';
 
-    const readMinutes = Math.floor((stats.word_count||0)/200);
-    const readSecs    = Math.round(((stats.word_count||0)/200 - readMinutes)*60);
-
-    let html = `
-    <div id="aidet-report-text" style="display:none">AI Score: ${score}%\nVerdict: ${verdict}\nWords: ${stats.word_count||0}\nSentences: ${stats.sentence_count||0}\nAvg Sentence Length: ${stats.avg_sentence_len||0}\nLength Variance: ${stats.sentence_variance||0}\nAI Phrases Found: ${stats.ai_phrases_found||0}</div>
-    <div class="ai-det-grid">
-      <div class="card card-pad">
-        <div class="flex items-center gap-8 mb-12" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-          <div class="section-heading" style="margin:0">INPUT TEXT STATISTICS</div>
-        </div>
-        <div class="stat-list-item">
-          <div class="stat-list-icon" style="background:var(--blue-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
-          <span class="stat-list-label">Words</span><span class="stat-list-value">${(stats.word_count||0).toLocaleString()}</span>
-        </div>
-        <div class="stat-list-item">
-          <div class="stat-list-icon" style="background:#F0FDF4"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
-          <span class="stat-list-label">Sentences</span><span class="stat-list-value">${stats.sentence_count||0}</span>
-        </div>
-        <div class="stat-list-item">
-          <div class="stat-list-icon" style="background:var(--indigo-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-          <span class="stat-list-label">Average Sentence Length</span><span class="stat-list-value">${stats.avg_sentence_len||0} words</span>
-        </div>
-        <div class="stat-list-item">
-          <div class="stat-list-icon" style="background:var(--warn-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-          <span class="stat-list-label">Length Variance</span><span class="stat-list-value">${stats.sentence_variance||0}</span>
-        </div>
-        <div class="stat-list-item">
-          <div class="stat-list-icon" style="background:var(--danger-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
-          <span class="stat-list-label">AI Phrases Found</span><span class="stat-list-value">${stats.ai_phrases_found||0}</span>
-        </div>
-        <div class="stat-list-item">
-          <div class="stat-list-icon" style="background:#F0FDF4"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-          <span class="stat-list-label">Reading Time</span><span class="stat-list-value">${readMinutes} min ${readSecs} sec</span>
-        </div>
-      </div>
-      <div class="card card-pad">
-        <div class="flex items-center gap-8" style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <div class="section-heading" style="margin:0">AI DETECTION RESULT</div>
-        </div>
-        <div style="text-align:center;padding:20px 0">
-          <div style="font-size:64px;font-weight:800;letter-spacing:-2px;color:${score>65?'var(--danger)':score>40?'var(--warn)':'var(--success)'}">${score}%</div>
-          <div style="font-size:18px;font-weight:600;color:${score>65?'var(--danger)':score>40?'var(--warn)':'var(--success)'};margin-top:4px">${verdict}</div>
-        </div>
-        <div class="ai-meter-track mt-12">
-          <div class="ai-meter-thumb" style="left:${Math.max(2,Math.min(98,score))}%"></div>
-        </div>
-        <div class="ai-meter-labels mt-4"><span>0%</span><span>50%</span><span>100%</span></div>
-        <div class="callout callout-blue mt-16" style="font-size:12px">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          This is an estimated result and not definitive proof.
-        </div>
-      </div>
-    </div>
-
-    <div class="card card-pad">
-      <div class="flex items-center gap-8" style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <div class="section-heading" style="margin:0">DETAILED ANALYSIS</div>
-      </div>
-      <div class="detail-analysis-card">
-        <div class="detail-card">
-          <div class="detail-card-icon" style="background:var(--indigo-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
-          <div class="detail-card-num" style="color:var(--indigo)">${stats.avg_sentence_len||0}</div>
-          <div class="detail-card-label">Avg. Sentence Length</div>
-          <div class="detail-card-desc">AI-generated text often has longer, more uniform sentences.</div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-icon" style="background:var(--warn-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-          <div class="detail-card-num" style="color:var(--warn)">${stats.sentence_variance||0}</div>
-          <div class="detail-card-label">Length Variance</div>
-          <div class="detail-card-desc">Lower variance indicates more uniform sentence structure.</div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-icon" style="background:var(--danger-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
-          <div class="detail-card-num" style="color:var(--danger)">${stats.ai_phrases_found||0}</div>
-          <div class="detail-card-label">AI Phrases Found</div>
-          <div class="detail-card-desc">Certain phrases are more common in AI-generated text.</div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-icon" style="background:var(--blue-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-          <div class="detail-card-num" style="color:var(--blue)">${(stats.word_count||0).toLocaleString()}</div>
-          <div class="detail-card-label">Total Words</div>
-          <div class="detail-card-desc">Text length can influence detection accuracy.</div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-icon" style="background:var(--success-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
-          <div class="detail-card-num" style="color:var(--success)">${stats.sentence_count||0}</div>
-          <div class="detail-card-label">Total Sentences</div>
-          <div class="detail-card-desc">AI text may have repetitive or predictable patterns.</div>
-        </div>
-      </div>
-
-      ${data.analysis?`<div class="callout callout-gray mt-16" style="font-size:13px;line-height:1.8"><b>Detailed AI Analysis:</b><br>${data.analysis.replace(/\n/g,'<br>')}</div>`:''}
-
-      <div class="callout callout-yellow mt-16">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <b>Important Note</b><br>AI detection is probabilistic and may not always be accurate. Results should be used as a guideline, not as final evidence.
-      </div>
-    </div>`;
-    document.getElementById('aidet-output').innerHTML = html;
-  }catch(e){error('aidet-output','AI detection failed. Check server.');}
-}
-function sendToHumanize(){
-  const text = document.getElementById('aidet-text').value.trim();
-  document.getElementById('humanize-text').value = text;
-  showPanel('humanize');
-}
 
 /* ══════════════════════════════════════
    7. HUMANIZER
@@ -1649,8 +1453,8 @@ function sendToHumanize(){
 async function doHumanize(){
   const text  = document.getElementById('humanize-text').value.trim();
   const style = document.getElementById('humanize-style').value;
-  if(!text||text.length<50){alert('Please enter at least 50 characters.');return;}
-  loading('humanize-output','Rewriting in human style — 10–15 seconds...');
+  if(!text||text.length<20){alert('Please enter at least 20 characters.');return;}
+  loading('humanize-output','Running Pegasus Paraphraser & MiniLM Semantic Evaluator...');
   try{
     const data = await post('/humanize',{text:text,style:style});
     if(data.error){error('humanize-output',data.error);return;}
@@ -1660,44 +1464,54 @@ async function doHumanize(){
     <div class="humanize-grid">
       <div class="text-panel">
         <div class="text-panel-header">
-          <div class="text-panel-title">Original — ${data.original_words} words</div>
+          <div class="text-panel-title">Original Text — ${data.original_words} words</div>
           <button class="btn btn-secondary btn-sm" onclick="copyText(this.closest('.text-panel').querySelector('.text-panel-body').innerText)">Copy</button>
         </div>
-        <div class="text-panel-body">${text}</div>
+        <div class="text-panel-body">${escapeHtml(text)}</div>
       </div>
       <div class="text-panel" style="border-color:var(--success-bd)">
         <div class="text-panel-header">
-          <div class="text-panel-title" style="color:var(--success)">Humanized — ${data.humanized_words} words</div>
+          <div class="text-panel-title" style="color:var(--success)">Paraphrased Output — ${data.humanized_words} words</div>
           <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('humanized-result').innerText)">Copy</button>
         </div>
-        <div class="text-panel-body" id="humanized-result">${humanized}</div>
+        <div class="text-panel-body" id="humanized-result">${escapeHtml(humanized)}</div>
       </div>
     </div>`;
-    if(data.meaning_similarity!=null){
-      html += `<div class="stat-row">
+
+    html += `<div class="stat-row mt-16">`;
+    if(data.meaning_similarity != null){
+      html += `
         <div class="stat-card sc-blue">
           <div class="stat-card-num">${data.meaning_similarity}%</div>
-          <div class="stat-card-label">Meaning Preserved (semantic similarity)</div>
+          <div class="stat-card-label">Meaning Preserved (MiniLM Cosine Sim)</div>
+        </div>`;
+    }
+    if(data.paraphrase_quality != null){
+      html += `
+        <div class="stat-card sc-green">
+          <div class="stat-card-num">${data.paraphrase_quality}%</div>
+          <div class="stat-card-label">Candidate Quality Score (Multi-Metric)</div>
+        </div>`;
+    }
+    html += `
+        <div class="stat-card sc-indigo">
+          <div class="stat-card-num">${data.chunks_processed || 1}</div>
+          <div class="stat-card-label">Chunks Processed (${data.candidates_evaluated || 3} candidates)</div>
         </div>
       </div>`;
-    }
+
     if(changes.length){
-      html += `<div class="callout callout-green"><b>Changes Made:</b><br>${changes.map(c=>`• ${escapeHtml(c)}`).join('<br>')}</div>`;
+      html += `<div class="callout callout-green mt-16"><b>Pipeline Steps Executed:</b><br>${changes.map(c=>`• ${escapeHtml(c)}`).join('<br>')}</div>`;
     }
-    html += `<div class="flex gap-8 flex-wrap">
-      <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('humanized-result').innerText)">Copy Humanized</button>
-      <button class="btn btn-secondary btn-sm" onclick="testAIScore()">Run AI Detection on Result</button>
+    html += `<div class="flex gap-8 flex-wrap mt-16">
+      <button class="btn btn-primary btn-sm" onclick="copyText(document.getElementById('humanized-result').innerText)">Copy Paraphrased Text</button>
       <button class="btn btn-secondary btn-sm" onclick="checkPlagiarism()">Check Plagiarism</button>
-      <button class="btn btn-secondary btn-sm" onclick="downloadTxt(document.getElementById('humanized-result').innerText,'humanized-text')">↓ Download</button>
+      <button class="btn btn-secondary btn-sm" onclick="downloadTxt(document.getElementById('humanized-result').innerText,'humanized-text')">↓ Download Text</button>
     </div>
-    <div class="callout callout-yellow" style="font-size:13px">${escapeHtml(data.tip||'This is a natural academic rewrite, not a guaranteed AI-detector bypass.')}</div>
-    ${data.note?`<div class="callout callout-gray" style="font-size:12px">${escapeHtml(data.note)}</div>`:''}`;
+    <div class="callout callout-blue mt-16" style="font-size:13px">${escapeHtml(data.tip||'Paraphrased using a pretrained Transformer sequence-to-sequence model.')}</div>
+    ${data.note?`<div class="callout callout-gray mt-8" style="font-size:12px">${escapeHtml(data.note)}</div>`:''}`;
     document.getElementById('humanize-output').innerHTML = html;
-  }catch(e){error('humanize-output','Humanization failed. Check server.');}
-}
-function testAIScore(){
-  document.getElementById('aidet-text').value = document.getElementById('humanized-result').innerText;
-  showPanel('aidetect');
+  }catch(e){error('humanize-output','Humanization pipeline execution failed. Check server connection.');}
 }
 function checkPlagiarism(){
   document.getElementById('plag-text').value = document.getElementById('humanized-result').innerText;

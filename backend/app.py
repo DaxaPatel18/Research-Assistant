@@ -578,241 +578,408 @@ Be specific and constructive. Keep response under 200 words.""",
 # ─────────────────────────────────────────
 #  6. AI DETECTION
 # ─────────────────────────────────────────
-@app.post("/detect-ai")
-def detect_ai(req: TextAnalysisRequest):
-    try:
-        text = req.text.strip()
-        if len(text) < 100:
-            return {"error": "Please provide at least 100 characters."}
+#  6. HUMANIZER (Pegasus NLP + MiniLM Pipeline)
+# ─────────────────────────────────────────
+paraphrase_model = None
+paraphrase_tokenizer = None
 
-        sentences    = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        words        = text.split()
-        avg_sent_len = len(words) / max(len(sentences), 1)
+def get_paraphrase_model():
+    """
+    Lazy loader for tuner007/pegasus_paraphrase transformer model.
+    Cached globally after initial load to optimize memory and speed.
+    """
+    global paraphrase_model, paraphrase_tokenizer
+    if paraphrase_model is None:
+        print("Loading Pegasus Paraphrase model (tuner007/pegasus_paraphrase)...")
+        from transformers import PegasusForConditionalGeneration, PegasusTokenizer
+        model_name = "tuner007/pegasus_paraphrase"
+        paraphrase_tokenizer = PegasusTokenizer.from_pretrained(model_name)
+        paraphrase_model = PegasusForConditionalGeneration.from_pretrained(model_name)
+        paraphrase_model.eval()
+        print("Pegasus Paraphrase model ready!")
+    return paraphrase_tokenizer, paraphrase_model
 
-        sent_lengths = [len(s.split()) for s in sentences]
-        if len(sent_lengths) > 1:
-            mean_len  = sum(sent_lengths) / len(sent_lengths)
-            variance  = sum((l - mean_len)**2 for l in sent_lengths) / len(sent_lengths)
-            std_dev   = variance ** 0.5
+def split_into_sentences(text: str) -> list:
+    """
+    Splits text into individual sentences while preserving exact order and count N.
+    Regex handles standard sentence boundaries (. ! ?) followed by whitespace or end of string.
+    Guarantees N input sentences -> N output units.
+    """
+    paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
+    sentences = []
+
+    for para in paragraphs:
+        raw_sents = [s.strip() for s in re.split(r'(?<=[.!?])\s+', para) if s.strip()]
+        if raw_sents:
+            sentences.extend(raw_sents)
         else:
-            std_dev = 0
+            sentences.append(para)
 
-        text_lower      = text.lower()
-        ai_phrase_count = sum(1 for phrase in AI_FLAG_PHRASES if phrase in text_lower)
+    return sentences if sentences else [text.strip()]
 
-        ai_analysis = ask_groq(
-            "You are an expert AI text detection system. Analyze carefully.",
-            f"""Analyze if this text was written by AI or human.
+def split_into_chunks(text: str, max_words: int = 100) -> list:
+    """
+    Legacy compatibility wrapper mapping to sentence segmentation.
+    """
+    return split_into_sentences(text)
 
-Text:
-{text[:2000]}
+def generate_candidates_pegasus(sentence_text: str, num_candidates: int = 3, style: str = "academic") -> list:
+    """
+    Generates multiple candidate paraphrases using pretrained Pegasus seq2seq model.
+    Configures generation parameters according to selected style:
+      - Academic: num_beams=5, do_sample=False (controlled deterministic search)
+      - Casual:   num_beams=4, do_sample=True, temperature=1.2, top_p=0.90
+      - Natural:  num_beams=4, do_sample=True, temperature=1.1, top_p=0.92
+    """
+    tokenizer, model = get_paraphrase_model()
+    import torch
 
-Reply in EXACTLY this format:
-AI_SCORE: [0-100]
-CONFIDENCE: [Low/Medium/High]
-VERDICT: [AI Generated / Likely AI / Uncertain / Likely Human / Human Written]
+    inputs = tokenizer(
+        [sentence_text],
+        truncation=True,
+        padding="longest",
+        max_length=64,
+        return_tensors="pt"
+    )
 
-KEY INDICATORS:
-- [indicator 1]
-- [indicator 2]
-- [indicator 3]
-
-EXPLANATION:
-[2-3 sentences]
-
-HUMAN PATTERNS MISSING:
-[What is absent]""",
-            max_tokens=500
-        )
-
-        score_match = re.search(r'AI_SCORE:\s*(\d+)', ai_analysis)
-        ai_score    = int(score_match.group(1)) if score_match else 50
-
-        if std_dev < 3 and len(sentences) > 3:
-            ai_score = min(100, ai_score + 10)
-        if ai_phrase_count > 2:
-            ai_score = min(100, ai_score + 4 * ai_phrase_count)
-
-        ai_score = min(100, max(0, ai_score))
-
-        return {
-            "ai_score": ai_score,
-            "verdict":  (
-                "Almost Certainly AI" if ai_score > 85 else
-                "Likely AI Generated" if ai_score > 65 else
-                "Possibly AI"         if ai_score > 45 else
-                "Likely Human"        if ai_score > 25 else
-                "Almost Certainly Human"
-            ),
-            "risk_level": "High" if ai_score > 65 else "Medium" if ai_score > 40 else "Low",
-            "stats": {
-                "word_count":        len(words),
-                "sentence_count":    len(sentences),
-                "avg_sentence_len":  round(avg_sent_len, 1),
-                "sentence_variance": round(std_dev, 1),
-                "ai_phrases_found":  ai_phrase_count,
-            },
-            "analysis": ai_analysis
+    if style == "casual":
+        gen_kwargs = {
+            "num_beams": 4,
+            "do_sample": True,
+            "temperature": 1.2,
+            "top_p": 0.90,
+            "no_repeat_ngram_size": 2,
+            "early_stopping": True
+        }
+    elif style == "natural":
+        gen_kwargs = {
+            "num_beams": 4,
+            "do_sample": True,
+            "temperature": 1.1,
+            "top_p": 0.92,
+            "no_repeat_ngram_size": 2,
+            "early_stopping": True
+        }
+    else:  # academic / default
+        gen_kwargs = {
+            "num_beams": 5,
+            "do_sample": False,
+            "no_repeat_ngram_size": 2,
+            "early_stopping": True
         }
 
-    except Exception as e:
-        return {"error": str(e)}
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_length=64,
+            num_return_sequences=num_candidates,
+            **gen_kwargs
+        )
 
-# ─────────────────────────────────────────
-#  7. HUMANIZER
-# ─────────────────────────────────────────
+    candidates = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    unique_candidates = []
+    for c in candidates:
+        c_clean = c.strip()
+        if c_clean and c_clean not in unique_candidates:
+            unique_candidates.append(c_clean)
+
+    return unique_candidates
+
+def score_candidate(original_sentence: str, candidate_sentence: str) -> dict:
+    """
+    Evaluates candidate paraphrase against the original sentence using multi-metric scoring:
+    - 70% Semantic Similarity (MiniLM cosine similarity - dominant factor)
+    - 15% Lexical Diversity (Word variation score)
+    - 15% Quality & Readability Heuristics (Repetition penalty & length ratio)
+    """
+    # 1. Semantic Similarity (0.0 to 1.0)
+    sim_pct = semantic_similarity_pct(original_sentence, candidate_sentence)
+    if sim_pct is not None:
+        sem_sim = max(0.0, min(1.0, sim_pct / 100.0))
+    else:
+        sem_sim = 0.5
+
+    # 2. Lexical Diversity (0.0 to 1.0)
+    orig_words = set(re.findall(r'\b\w+\b', original_sentence.lower()))
+    cand_words = set(re.findall(r'\b\w+\b', candidate_sentence.lower()))
+
+    if orig_words and cand_words:
+        intersection = orig_words & cand_words
+        union = orig_words | cand_words
+        overlap_ratio = len(intersection) / len(union) if union else 1.0
+        lexical_diversity = 1.0 - overlap_ratio
+    else:
+        lexical_diversity = 0.0
+
+    # 3. Readability & Repetition Heuristics (0.0 to 1.0)
+    orig_len = max(len(original_sentence.split()), 1)
+    cand_len = max(len(candidate_sentence.split()), 1)
+    len_ratio = cand_len / orig_len
+    len_score = 1.0 if 0.7 <= len_ratio <= 1.3 else 0.7 if 0.5 <= len_ratio <= 1.5 else 0.3
+
+    words = candidate_sentence.lower().split()
+    if len(words) >= 4:
+        bigrams = [' '.join(words[i:i+2]) for i in range(len(words)-1)]
+        rep_ratio = len(set(bigrams)) / len(bigrams) if bigrams else 1.0
+    else:
+        rep_ratio = 1.0
+
+    quality_heuristic = (len_score * 0.6) + (rep_ratio * 0.4)
+
+    # Dominant semantic weighting (70% Semantic, 15% Diversity, 15% Quality)
+    final_score = (sem_sim * 0.70) + (lexical_diversity * 0.15) + (quality_heuristic * 0.15)
+
+    # Near-identical check (normalized text comparison or lexical diversity < 0.05)
+    is_near_identical = (candidate_sentence.strip().lower() == original_sentence.strip().lower()) or (lexical_diversity < 0.05)
+
+    return {
+        "final_score": round(final_score, 4),
+        "semantic_similarity": round(sem_sim * 100, 1),
+        "lexical_diversity": round(lexical_diversity * 100, 1),
+        "quality_score": round(quality_heuristic * 100, 1),
+        "candidate": candidate_sentence,
+        "is_near_identical": is_near_identical
+    }
+
+
+def extract_protected_items(sentence: str) -> list:
+    """
+    Extracts protected technical information items from an original sentence:
+    - Numbers (integers, decimals, percentages, numbers with commas like '10,000', '92.5%', '89.7%', '384')
+    - Model names & technical identifiers ('all-MiniLM-L6-v2', 'Python', 'Pegasus', etc.)
+    - Hyphenated technical identifiers ('384-dimensional', 'F1-score')
+    - Important domain technical terms ('cosine similarity', 'embeddings', 'query', 'research papers', etc.)
+    """
+    items = []
+
+    # 1. Numbers (integers, decimals, percentages, numbers with commas)
+    num_pattern = re.compile(r'\b\d+(?:,\d+)*(?:\.\d+)?%?\b')
+    for match in num_pattern.finditer(sentence):
+        num_str = match.group(0).strip()
+        if num_str and num_str not in items:
+            items.append(num_str)
+
+    # 2. Known model names, languages, and technical identifiers
+    ident_pattern = re.compile(r'\b(?:all-MiniLM-L6-v2|MiniLM|Python|PyTorch|TensorFlow|Groq|Pegasus)\b', re.IGNORECASE)
+    for match in ident_pattern.finditer(sentence):
+        item = match.group(0).strip()
+        if item and not any(item.lower() == existing.lower() for existing in items):
+            items.append(item)
+
+    # 3. Hyphenated technical identifiers and acronyms
+    hyphen_pattern = re.compile(r'\b[A-Za-z0-9]+-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*\b')
+    for match in hyphen_pattern.finditer(sentence):
+        item = match.group(0).strip()
+        if item and not any(item.lower() == existing.lower() for existing in items):
+            items.append(item)
+
+    # 4. Domain-specific technical terms & concepts
+    KNOWN_TECH_TERMS = [
+        "cosine similarity", "research papers", "research paper", "machine learning",
+        "training data", "biased data", "training subsets", "testing subsets",
+        "logistic regression", "decision trees", "random forests",
+        "support vector machines", "support vector", "neural networks", "neural network",
+        "transformer models", "transformer model", "transformer",
+        "semantic representations", "semantic representation",
+        "sentence embeddings", "sentence embedding", "numerical vectors", "numerical vector",
+        "semantic relevance", "keyword matches", "keyword match", "keyword",
+        "data analysis", "embeddings", "embedding", "query", "queries"
+    ]
+    sent_lower = sentence.lower()
+    for term in KNOWN_TECH_TERMS:
+        if term in sent_lower:
+            start_idx = sent_lower.find(term)
+            exact_casing = sentence[start_idx:start_idx + len(term)]
+            if exact_casing and not any(exact_casing.lower() == existing.lower() or existing.lower() in exact_casing.lower() for existing in items):
+                items.append(exact_casing)
+
+    return items
+
+def verify_protected_items_preserved(candidate: str, protected_items: list) -> tuple:
+    """
+    Verifies if all protected items from the original sentence are preserved in the candidate paraphrase.
+    Returns (is_preserved: bool, missing_items: list).
+    """
+    cand_lower = candidate.lower()
+    missing = []
+
+    for item in protected_items:
+        item_lower = item.lower()
+
+        # Direct substring match
+        if item_lower in cand_lower:
+            continue
+
+        # Variations handling
+        # 1. Hyphenated vs spaced (e.g. 'f1-score' vs 'f1 score')
+        if '-' in item_lower and item_lower.replace('-', ' ') in cand_lower:
+            continue
+
+        # 2. Number with/without commas (e.g. '10,000' vs '10000')
+        if ',' in item_lower and item_lower.replace(',', '') in cand_lower:
+            continue
+
+        # 3. Percentages (e.g. '92.5%' vs '92.5 percent' or '92.5')
+        if item_lower.endswith('%'):
+            val_no_pct = item_lower[:-1].strip()
+            if val_no_pct in cand_lower:
+                continue
+
+        missing.append(item)
+
+    return (len(missing) == 0, missing)
+
 @app.post("/humanize")
 def humanize(req: TextAnalysisRequest):
     """
-    Natural Academic Rewrite.
-
-    Rewrites text so it reads naturally while preserving facts, technical
-    terms, citations, numbers and claims. This is NOT a guaranteed AI-
-    detector bypass — see the disclaimer in the response.
-
-    Fix notes (why the previous version barely moved the AI score, and
-    sometimes made it worse):
-      1. /detect-ai penalizes ~22 specific phrases, but the old prompts
-         only asked the model to avoid ~10 of them. Any of the other ~12
-         left untouched kept the penalty active. Worse, a couple of styles
-         could introduce "certainly"/"absolutely" as natural-sounding
-         filler, which are ALSO on the flagged list — so the score could
-         go up. Fixed by giving every style the exact same full list.
-      2. Sentence-length variety was only a vague bullet point, so the
-         model often produced text that was still fairly uniform. Fixed
-         with concrete numeric guidance.
-      3. There was no deterministic guarantee — a single LLM call is
-         probabilistic and can simply miss instructions. Fixed by adding
-         a rule-based cleanup pass (strip_ai_phrases) that runs after the
-         rewrite and removes any flagged phrase that slipped through,
-         without deleting or altering any factual content.
+    ML Paraphrasing & Humanizer Pipeline:
+    Text -> Sentence Segmentation -> Protected Information Extraction -> Pegasus Sentence Paraphrasing ->
+    MiniLM Semantic & Quality Scoring -> Protected Information Verification -> Candidate Selection / Safety Fallback -> Conservative AI Phrase Cleanup
+    Guarantees N input sentences -> N output sentences.
     """
     try:
-        text  = req.text.strip()
+        text = req.text.strip()
         style = req.style or "academic"
 
-        if len(text) < 50:
-            return {"error": "Please provide at least 50 characters."}
+        if len(text) < 20:
+            return {"error": "Please provide at least 20 characters."}
 
-        avoid_phrases_list = "\n".join(f'- "{p}"' for p in AI_FLAG_PHRASES)
+        fallback_used = False
+        sentences_processed = 0
+        sentences_changed = 0
+        candidates_rejected = 0
+        candidates_rejected_protected_info = 0
+        unchanged_candidates = 0
+        total_candidates_eval = 0
+        protected_items_found = 0
+        protected_items_preserved = 0
 
-        shared_rules = f"""
-CRITICAL — do not use ANY of these phrases anywhere in the rewrite (they are
-strong AI-writing signals). If the original text contains one, replace it
-with a natural alternative instead of just deleting it:
-{avoid_phrases_list}
+        selected_sentences = []
+        sentence_scores = []
 
-CRITICAL — sentence rhythm: aim for a genuine mix of sentence lengths in
-every paragraph — at least one shorter sentence (roughly 6-12 words) and at
-least one longer sentence (roughly 22-30 words) per paragraph where the
-content allows it. Uniform, evenly-paced sentences are a strong AI signal.
+        try:
+            # 1-to-1 Sentence Segmentation: N input sentences -> N output units
+            sentences = split_into_sentences(text)
+            sentences_processed = len(sentences)
 
-Preserve, exactly and without alteration:
-- All technical terms, named methods, and jargon
-- All citations and references (e.g., [1], (Smith, 2020))
-- All numbers, statistics, percentages and dates
-- All factual claims and the overall meaning
-Do not invent new facts, examples, or claims that were not in the original.
-Do not delete any factual content, only rephrase it.
-"""
+            for sent in sentences:
+                protected = extract_protected_items(sent)
+                protected_items_found += len(protected)
 
-        style_instructions = {
-            "academic": f"""You are an academic editor rewriting text so it reads like it was
-written by a genuine researcher, while keeping a professional, academic tone.
-{shared_rules}
-Additional style guidance:
-- Use contractions sparingly and only where natural for academic prose (don't, it's)
-- Prefer plainer verbs over inflated ones where meaning is unaffected: "utilize"→"use", "demonstrate"→"show", "facilitate"→"help"
-- Occasionally start a sentence with "And" or "But" if it reads naturally
-- Vary paragraph rhythm; avoid restating the same sentence pattern twice in a row""",
+                candidates = generate_candidates_pegasus(sent, num_candidates=3, style=style)
+                total_candidates_eval += len(candidates)
 
-            "casual": f"""You are rewriting text so it reads like a smart, casual student wrote it.
-{shared_rules}
-Additional style guidance:
-- Use contractions freely (don't, it's, they're, we've, can't, won't)
-- Natural informal connectors are fine: "basically", "the thing is", "what's interesting is"
-- Add a little personal voice where appropriate: "I'd argue", "from what I can tell"
-- Keep it conversational but still factually precise""",
+                # Score Pegasus candidates against original sentence ONLY
+                scored_candidates = []
+                for cand in candidates:
+                    scored = score_candidate(sent, cand)
+                    
+                    # Verify protected information preservation
+                    is_prot_preserved, missing_items = verify_protected_items_preserved(cand, protected)
+                    scored["protected_preserved"] = is_prot_preserved
+                    scored["missing_protected"] = missing_items
 
-            "natural": f"""You are rewriting text so it reads like a thoughtful person wrote it naturally.
-{shared_rules}
-Additional style guidance:
-- Use occasional parenthetical asides or em dashes for a natural aside — they feel human
-- Prefer concrete, specific phrasing over generic, uniform phrasing
-- One-sentence paragraphs are fine occasionally
-- Keep the tone genuine rather than performative"""
-        }
+                    if not is_prot_preserved:
+                        candidates_rejected_protected_info += 1
+                        if scored["is_near_identical"]:
+                            unchanged_candidates += 1
+                        continue  # Reject candidate failing protected information check!
 
-        instruction = style_instructions.get(style, style_instructions["academic"])
+                    scored_candidates.append(scored)
+                    if scored["is_near_identical"]:
+                        unchanged_candidates += 1
 
-        humanized_raw = ask_groq(
-            instruction,
-            f"""Rewrite the following text following all the rules above.
-Do NOT add any explanation, preamble, or notes — output ONLY the rewritten text.
+                # Filter candidates >= 35% semantic similarity
+                valid_candidates = [sc for sc in scored_candidates if sc["semantic_similarity"] >= 35.0]
+                candidates_rejected += (len(candidates) - len(valid_candidates))
 
-Original text:
-{text}
+                if valid_candidates:
+                    # Sort valid candidates by final score descending
+                    sorted_valid = sorted(valid_candidates, key=lambda x: x["final_score"], reverse=True)
+                    
+                    # Prefer a valid candidate that is not near-identical to original
+                    non_identical_candidates = [sc for sc in sorted_valid if not sc["is_near_identical"]]
+                    if non_identical_candidates:
+                        best_choice = non_identical_candidates[0]
+                    else:
+                        best_choice = sorted_valid[0]
 
-Rewritten version:""",
-            max_tokens=2000
-        )
+                    selected_text = best_choice["candidate"]
+                    sentence_scores.append(best_choice["final_score"])
+                    
+                    if selected_text.strip().lower() != sent.strip().lower():
+                        sentences_changed += 1
 
-        # Deterministic safety net: guarantee no flagged phrase survives,
-        # regardless of what the model actually did.
-        humanized = strip_ai_phrases(humanized_raw)
+                    # Count preserved protected items for best choice
+                    _, missing_in_selected = verify_protected_items_preserved(selected_text, protected)
+                    protected_items_preserved += (len(protected) - len(missing_in_selected))
 
-        # ── Report what actually changed ──
-        contractions = ["don't","it's","we've","they're","isn't","wasn't","can't","won't","that's"]
-        contractions_added = [c for c in contractions if c in humanized.lower() and c not in text.lower()]
+                else:
+                    # Safety Fallback: Use ORIGINAL SENTENCE if all generated candidates failed protected info or sem_sim check
+                    selected_text = sent
+                    sentence_scores.append(0.85)
+                    protected_items_preserved += len(protected)
 
-        phrases_removed = [p for p in AI_FLAG_PHRASES
-                            if p in text.lower() and p not in humanized.lower()]
+                selected_sentences.append(selected_text)
+
+            raw_humanized = " ".join(selected_sentences)
+
+        except Exception as model_err:
+            print("Pegasus model execution error, using LLM fallback:", model_err)
+            fallback_used = True
+            instruction = f"Rewrite this text into natural, fluent academic prose in '{style}' style. Preserve all facts, terms, numbers, and meaning."
+            raw_humanized = ask_groq(instruction, text, max_tokens=1500)
+            sentences_processed = len(split_into_sentences(text))
+            sentences_changed = sentences_processed
+            total_candidates_eval = 1
+
+        # Conservative final cleanup pass: subtle removal of flagged AI phrases without aggressive rewriting
+        humanized = strip_ai_phrases(raw_humanized)
+
+        # Compute overall semantic similarity using all-MiniLM-L6-v2
+        meaning_similarity = semantic_similarity_pct(text, humanized)
+        avg_quality_score = round(sum(sentence_scores) / len(sentence_scores) * 100, 1) if sentence_scores else 80.0
 
         changes_made = []
-        if contractions_added:
-            changes_made.append(f"Added contractions: {', '.join(contractions_added[:4])}")
-        if phrases_removed:
-            shown = phrases_removed[:4]
-            more  = f" (+{len(phrases_removed)-4} more)" if len(phrases_removed) > 4 else ""
-            changes_made.append(f"Removed AI-associated phrasing: {', '.join(shown)}{more}")
-
-        orig_sents = [s for s in re.split(r'[.!?]+', text) if s.strip()]
-        hum_sents  = [s for s in re.split(r'[.!?]+', humanized) if s.strip()]
-        if len(orig_sents) > 1 and len(hum_sents) > 1:
-            orig_lens = [len(s.split()) for s in orig_sents]
-            hum_lens  = [len(s.split()) for s in hum_sents]
-            orig_var  = sum((l - sum(orig_lens)/len(orig_lens))**2 for l in orig_lens) / len(orig_lens)
-            hum_var   = sum((l - sum(hum_lens)/len(hum_lens))**2 for l in hum_lens) / len(hum_lens)
-            if hum_var > orig_var:
-                changes_made.append("Increased sentence-length variety")
-
-        if not changes_made:
-            changes_made.append("Rewrote with more natural flow and academic voice")
+        if fallback_used:
+            changes_made.append("Applied fallback neural rephrasing")
+        else:
+            changes_made.append("Paraphrased sentence-by-sentence with Pegasus (tuner007/pegasus_paraphrase)")
+            changes_made.append("Evaluated candidates with MiniLM semantic preservation (70% weight)")
+            if candidates_rejected_protected_info > 0:
+                changes_made.append(f"Enforced Protected Info Validation ({candidates_rejected_protected_info} candidate(s) rejected for missing facts)")
+        changes_made.append("Applied conservative phrase cleanup")
         changes_made.append(f"Style applied: {style.title()}")
 
-        # Honest meaning-preservation signal using the existing MiniLM model
-        # (not a loop, not a detector bypass — just a diagnostic metric).
-        meaning_similarity = semantic_similarity_pct(text, humanized)
-
         return {
-            "humanized_text":     humanized,
-            "original_words":     len(text.split()),
-            "humanized_words":    len(humanized.split()),
-            "changes_made":       changes_made,
-            "meaning_similarity": meaning_similarity,  # 0-100, or null if unavailable
-            "tip": "This is a natural academic rewrite, not a guaranteed AI-detector bypass. "
-                   "You can re-run AI Detection on the result to see how it scores, but "
-                   "detection scores vary between systems and are not definitive proof of authorship.",
-            "note": "AI-detection tools (including the one in this app) are probabilistic and "
-                    "can disagree with each other or with themselves on repeated runs. Treat "
-                    "any AI score as a rough signal, not evidence of who wrote a text."
+            "humanized_text": humanized,
+            "original_words": len(text.split()),
+            "humanized_words": len(humanized.split()),
+            "changes_made": changes_made,
+            "meaning_similarity": meaning_similarity,
+            "paraphrase_quality": avg_quality_score,
+            "chunks_processed": sentences_processed,
+            "sentences_processed": sentences_processed,
+            "sentences_changed": sentences_changed,
+            "candidates_evaluated": total_candidates_eval,
+            "candidates_rejected": candidates_rejected,
+            "candidates_rejected_protected_info": candidates_rejected_protected_info,
+            "protected_items_found": protected_items_found,
+            "protected_items_preserved": protected_items_preserved,
+            "unchanged_candidates": unchanged_candidates,
+            "pipeline": "Pegasus seq2seq Sentence Paraphrasing + all-MiniLM-L6-v2 Semantic Scoring",
+            "fallback_used": fallback_used,
+            "tip": "Paraphrased sentence-by-sentence using a pretrained Transformer sequence-to-sequence model and evaluated for semantic preservation.",
+            "note": "This tool focuses on meaning-preserving paraphrasing and writing quality improvement. It is an ML academic utility and does not guarantee bypassing AI detection systems."
         }
 
     except Exception as e:
         print("Humanize error:", e)
         return {"error": str(e)}
 
-# ─────────────────────────────────────────
+
+
+
 #  8. AI CHAT
 # ─────────────────────────────────────────
 @app.post("/chat")

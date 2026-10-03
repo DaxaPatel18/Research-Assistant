@@ -1,6 +1,14 @@
 fastapi
 uvicorn
+groq
 anthropic
 python-dotenv
 requests
 httpx
+sentence-transformers
+torch
+transformers
+pymupdf
+sentencepiece
+protobuf
+tiktoken
