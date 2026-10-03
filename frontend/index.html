@@ -606,6 +606,22 @@ select.input{cursor:pointer}
   .stat-row{flex-wrap:wrap}
   .detail-analysis-card{grid-template-columns:repeat(2,1fr)}
 }
+
+/* ══════════════════════════════════════
+   AI MARKDOWN RENDERER STYLES
+══════════════════════════════════════ */
+.md-rendered { font-size: 14px; line-height: 1.75; color: var(--text-1); }
+.md-line { margin-bottom: 4px; }
+.md-space { height: 10px; }
+.md-h1, .md-h2, .md-h3 { font-weight: 700; color: var(--text-1); margin-top: 14px; margin-bottom: 6px; }
+.md-h1 { font-size: 17px; }
+.md-h2 { font-size: 15px; }
+.md-h3 { font-size: 14px; }
+.md-bullet-item, .md-num-item { display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; padding-left: 2px; }
+.md-bullet-dot { color: var(--blue); font-weight: 700; flex-shrink: 0; font-size: 14px; }
+.md-num-label { color: var(--text-2); font-weight: 600; flex-shrink: 0; min-width: 18px; }
+.md-bullet-content, .md-num-content { flex: 1; }
+
 </style>
 </head>
 <body>
@@ -1044,6 +1060,53 @@ function downloadReport(panel){
 let lastSearchResults = [];   // full, untruncated paper objects from the last search
 let currentPaperContext = null; // active paper context for Ask AI, or null
 
+
+function renderAIResponse(text){
+  if(text == null) return '';
+  let str = String(text).trim();
+  if(!str) return '';
+
+  // Step 1: Escape untrusted HTML for security (XSS prevention)
+  let safe = escapeHtml(str);
+
+  // Step 2: Headings (# Heading, ## Heading, ### Heading)
+  safe = safe.replace(/^### (.*$)/gim, '<div class="md-h3">$1</div>');
+  safe = safe.replace(/^## (.*$)/gim, '<div class="md-h2">$1</div>');
+  safe = safe.replace(/^# (.*$)/gim, '<div class="md-h1">$1</div>');
+
+  // Step 3: Bold (**text** or __text__)
+  safe = safe.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  safe = safe.replace(/__(.*?)__/g, '<b>$1</b>');
+
+  // Step 4: Italic (*text* or _text_)
+  safe = safe.replace(/\b\*([^*]+)\*\b/g, '<i>$1</i>');
+
+  // Step 5: Line-by-line list & paragraph parsing
+  let lines = safe.split('\n');
+  let formattedLines = [];
+
+  for(let i = 0; i < lines.length; i++){
+    let line = lines[i].trim();
+
+    // Check for bullet item: '- ', '• ', '* '
+    let bulletMatch = line.match(/^[-•\*]\s+(.*)$/);
+    // Check for numbered item: '1. ', '2. ', '1) '
+    let numMatch = line.match(/^(\d+[\.\)])\s+(.*)$/);
+
+    if(bulletMatch){
+      formattedLines.push(`<div class="md-bullet-item"><span class="md-bullet-dot">•</span><span class="md-bullet-content">${bulletMatch[1]}</span></div>`);
+    } else if(numMatch){
+      formattedLines.push(`<div class="md-num-item"><span class="md-num-label">${numMatch[1]}</span><span class="md-num-content">${numMatch[2]}</span></div>`);
+    } else if(line === ''){
+      formattedLines.push('<div class="md-space"></div>');
+    } else {
+      formattedLines.push(`<div class="md-line">${line}</div>`);
+    }
+  }
+
+  return `<div class="md-rendered">${formattedLines.join('')}</div>`;
+}
+
 function escapeHtml(s){
   return (s==null?'':String(s))
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1270,7 +1333,7 @@ function renderPDFResult(data){
     </div>
     <div class="card card-pad">
       <div class="section-heading">AI Generated Analysis</div>
-      <div class="analysis-text mt-12" id="pdf-analysis-text">${(data.analysis||'No analysis available.').replace(/\n/g,'<br>')}</div>
+      <div class="analysis-text mt-12" id="pdf-analysis-text">${renderAIResponse(data.analysis||'No analysis available.')}</div>
     </div>`;
 }
 function resetPDFUpload(){
@@ -1303,7 +1366,7 @@ async function doSummarize(){
   try{
     const data = await post('/summarize',{query:text,style:style});
     document.getElementById('summary-output').innerHTML =
-      `<div style="background:var(--blue-lt);border:1px solid var(--blue-mid);border-radius:var(--radius-sm);padding:16px 18px;font-size:14px;line-height:1.85;color:var(--text-1)">${(data.summary||'').replace(/\n/g,'<br>').replace(/•/g,'<span style="color:var(--blue);font-weight:700">•</span>')}</div>
+      `<div class="card card-pad">${renderAIResponse(data.summary||'')}</div>
        <div class="flex gap-8 mt-12">
          <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('summary-output').innerText)">Copy</button>
        </div>`;
@@ -1337,7 +1400,7 @@ async function doLitReview(){
           <button class="btn btn-secondary btn-sm" onclick="downloadTxt(document.getElementById('lit-review-text').innerText,'literature-review')">↓ Download</button>
         </div>
       </div>
-      <div class="lit-review-body" id="lit-review-text">${(data.review||'').replace(/\n/g,'<br>')}</div>`;
+      <div class="lit-review-body" id="lit-review-text">${renderAIResponse(data.review||'')}</div>`;
 
     // Left — stats
     const n = data.papers_used||0;
@@ -1439,7 +1502,7 @@ async function doPlagiarism(){
     }
 
     if(data.analysis){
-      html += `<div class="card card-pad"><div class="section-heading">AI Analysis</div><div style="font-size:14px;color:var(--text-1);line-height:1.85;margin-top:8px;white-space:pre-wrap">${data.analysis}</div></div>`;
+      html += `<div class="card card-pad"><div class="section-heading">AI Analysis</div><div class="mt-8">${renderAIResponse(data.analysis)}</div></div>`;
     }
     document.getElementById('plag-output').innerHTML = html;
   }catch(e){error('plag-output','Plagiarism check failed. Check server connection.');}
@@ -1558,7 +1621,7 @@ Question: ${displayMsg}`;
     const data = await post('/chat',{message:sendMsg,history:chatHist.slice(0,-1).slice(-6)});
     const reply= data.reply||'No response.';
     chatHist.push({role:'assistant',content:reply});
-    document.getElementById('ai-typing').innerHTML = reply.replace(/\n/g,'<br>');
+    document.getElementById('ai-typing').innerHTML = renderAIResponse(reply);
     document.getElementById('ai-typing').id='';
   }catch(e){
     document.getElementById('ai-typing').innerHTML='<span style="color:var(--danger)">Connection failed. Check backend server.</span>';
