@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 groq
 python-dotenv
 requests
@@ -7,3 +7,4 @@ scikit-learn
 numpy
 pymupdf
 python-multipart
+httpx
